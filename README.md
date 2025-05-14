@@ -179,18 +179,4 @@ Licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ```
 
----
-
-### ✅ Next Steps
-
-1. Create a `/docs` folder and place:
-   - `API_REFERENCE.md`
-   - `ARCHITECTURE.md`
-   - `FOLDER_STRUCTURE.md`
-
-2. Place the above `README.md` at the root of your GitHub repo.
-
-3. Preview it on GitHub to ensure all links render and the layout flows cleanly.
-
-Let me know if you want an **editable version of this `README.md` as a file**, or further refinements for your specific target audience.
 ```
