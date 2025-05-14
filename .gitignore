@@ -1,0 +1,104 @@
+# Ignore build results
+bin/
+obj/
+out/
+
+# Ignore Visual Studio temporary files, build results, and
+# user-specific files
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore Rider IDE files
+.idea/
+
+# Ignore test results
+TestResults/
+
+# Ignore publish directory
+publish/
+
+# Ignore nuget packages
+*.nupkg
+*.snupkg
+
+# Ignore Visual Studio Code workspace files
+*.code-workspace
+
+# Ignore environment settings
+.env
+.env.*
+
+# Ignore settings secret files
+secrets.json
+
+# Ignore appsettings if encrypted
+appsettings.Development.json
+appsettings.Local.json
+appsettings.json
+
+# Except encrypted files (if you encrypted manually with .enc or using sops)
+!appsettings.json.enc
+
+# Logs
+*.log
+logs/
+Logs/
+
+# Ignore generated files
+Generated_Code/
+
+# Ignore backups
+*.bak
+
+# Ignore node_modules if frontend is later added here
+node_modules/
+
+# Ignore docker related
+docker-compose.override.yml
+*.pid
+
+# Ignore coverage reports
+coverage/
+coverage-*
+**/CoverageReport/
+
+# Ignore temporary files
+~$*
+*.tmp
+
+# Ignore database files
+*.db
+
+# Ignore package-lock and yarn-lock if Node used later
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore .DS_Store (macOS users if interviewer pulls)
+.DS_Store
+
+# Ignore Thumbnails
+Thumbs.db
+ehthumbs.db
+
+# Ignore SOPS files metadata if any
+*.sops.yaml
+
+# Ignore everything sensitive
+*.pfx
+*.p12
+*.key
+*.crt
+
+# IDE-specific
+_ReSharper*/
+*.DotSettings.user
+
+# GitHub Copilot secret
+copilot-secret.json
+**/appsettings.json
+**/appsettings.Development.json

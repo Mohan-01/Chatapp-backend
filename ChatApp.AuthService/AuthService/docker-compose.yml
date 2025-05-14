@@ -1,0 +1,44 @@
+﻿version: '3.9'
+
+services:
+  authservice:
+    container_name: authservice
+    build:
+      context: ./AuthService
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__User=guest
+      - RabbitMQ__Password=guest
+      - RabbitMQ__Port=5672
+      - RabbitMQ__EnableAutoRecovery=true
+      - RabbitMQ__NetworkRecoveryInterval=5
+      - Jwt__Issuer=ChatAppAuth
+      - Jwt__Audience=ChatAppUsers
+      - Jwt__Key=your_super_secret_key_here_by_generating_the_code_using_ai_123988754520
+      - Jwt__AccessTokenExpiryMinutes=120
+      - MongoDbSettings__ConnectionString=mongodb+srv://mohanvenkata0111:s6dYPdQvpYUcjEJC@cluster0.exj3a5u.mongodb.net/
+      - MongoDbSettings__DatabaseName=ChatApp_AuthService
+      - EmailSettings__SmtpServer=smtp.gmail.com
+      - EmailSettings__Port=587
+      - EmailSettings__SenderEmail=mohanvenkata0111@gmail.com
+      - EmailSettings__SenderName=Job Portal Authentication Service
+      - EmailSettings__Username=mohanvenkata0111@gmail.com
+      - EmailSettings__Password=drmr xcxf jtgm bfis
+    depends_on:
+      - rabbitmq
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    restart: always
