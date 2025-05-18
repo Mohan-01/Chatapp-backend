@@ -11,13 +11,13 @@ using System.Text.Json;
 
 namespace ChatApp.UserService.Infrastructure.Consumers
 {
-    public class UserRegisteredConsumer: IUserRegisteredConsumer
+    public class UserRegisteredConsumer: IConsumer
     {
         private readonly IRabbitMQConnection _rabbitConnection;
-        private readonly ILogger<IUserRegisteredConsumer> _logger;
+        private readonly ILogger<IConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public UserRegisteredConsumer(IRabbitMQConnection rabbitConnection, ILogger<IUserRegisteredConsumer> logger, IServiceProvider serviceProvider)
+        public UserRegisteredConsumer(IRabbitMQConnection rabbitConnection, ILogger<IConsumer> logger, IServiceProvider serviceProvider)
         {
             _rabbitConnection = rabbitConnection;
             _logger = logger;

@@ -75,9 +75,9 @@ namespace ChatApp.ChatService.API.Controllers
             return Ok(response);
         }
 
-        // GET: api/Chat/{username1}/{username2}
+        // GET: api/Chat/{username2}
         [HttpGet("{username2}")]
-        public async Task<IActionResult> GetChatByUsernames(string username2)
+        public async Task<IActionResult> GetChatByUsername(string username2)
         {
             if (User.Identity?.Name == null)
             {

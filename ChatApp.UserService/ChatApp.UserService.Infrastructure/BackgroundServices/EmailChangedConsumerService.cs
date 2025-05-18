@@ -18,7 +18,7 @@ namespace ChatApp.UserService.Infrastructure.BackgroundServices
             Console.WriteLine("EmailChangedConsumerService is running.");
             using (var scope = _serviceProvider.CreateScope())
             {
-                var consumer = scope.ServiceProvider.GetRequiredService<IEmailChangedConsumer>();
+                var consumer = scope.ServiceProvider.GetRequiredService<IConsumer>();
                 consumer.StartConsuming();
                 await Task.CompletedTask;
             }

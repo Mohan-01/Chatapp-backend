@@ -10,6 +10,8 @@ using ChatApp.UserService.Infrastructure.Settings;
 using ChatApp.UserService.Infrastructure.Consumers;
 using ChatApp.UserService.Infrastructure.BackgroundServices;
 using Shared.Middlewares;
+using Shared.HttpClients.Interfaces;
+using Shared.HttpClients;
 
 namespace ChatApp.UserService.API
 {
@@ -119,6 +121,7 @@ namespace ChatApp.UserService.API
                           .AllowCredentials();
                 });
             });
+            services.AddHttpClient(); // <-- This line is key
         }
 
         private static void ConfigureMongoDb(IServiceCollection services, IConfiguration configuration)
@@ -159,16 +162,16 @@ namespace ChatApp.UserService.API
 
         private static void ConfigureEventConsumers(IServiceCollection services)
         {
-            services.AddSingleton<IUserRegisteredConsumer, UserRegisteredConsumer>();
+            services.AddSingleton<IConsumer, UserRegisteredConsumer>();
             services.AddHostedService<UserRegisteredConsumerService>();
 
-            services.AddSingleton<IUsernameChangedConsumer, UsernameChangedConsumer>();
+            services.AddSingleton<IConsumer, UsernameChangedConsumer>();
             services.AddHostedService<UsernameChangedConsumerService>();
 
-            services.AddSingleton<IUserDeletedConsumer, UserDeletedConsumer>();
+            services.AddSingleton<IConsumer, UserDeletedConsumer>();
             services.AddHostedService<UserDeletedConsumerService>();
 
-            services.AddSingleton<IEmailChangedConsumer, EmailChangedConsumer>();
+            services.AddSingleton<IConsumer, EmailChangedConsumer>();
             services.AddHostedService<EmailChangedConsumerService>();
         }
 
@@ -181,6 +184,8 @@ namespace ChatApp.UserService.API
             services.AddScoped<IUserService, ChatApp.UserService.Core.Services.UserService>();
 
             services.AddScoped<IUserEventsService, ChatApp.UserService.Core.Services.UserEventsService>();
+
+            services.AddSingleton<IFriendApiClient, FriendApiClient>();
         }
 
         private static void ConfigureSwagger(IServiceCollection services)

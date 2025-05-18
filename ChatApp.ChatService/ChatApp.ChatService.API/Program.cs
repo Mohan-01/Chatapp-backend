@@ -5,11 +5,12 @@ using Serilog;
 using Serilog.Events;
 using Shared.Configurations;
 using ChatApp.ChatService.Core.Interfaces;
-using ChatApp.ChatService.Infrastructure.HttpClients;
 using ChatApp.ChatService.Infrastructure.Repositories;
 using ChatApp.ChatService.Infrastructure.Settings;
 using ChatService.Mappings;
 using Shared.Middlewares;
+using Shared.HttpClients.Interfaces;
+using Shared.HttpClients;
 
 namespace ChatApp.ChatService.API
 {

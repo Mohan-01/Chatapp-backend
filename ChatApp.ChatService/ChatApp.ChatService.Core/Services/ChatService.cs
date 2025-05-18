@@ -12,6 +12,7 @@ using ChatApp.ChatService.Core.DTOs.Chat;
 using ChatApp.ChatService.Core.Mappings;
 using MongoDB.Driver;
 using ChatApp.ChatService.Core.Exceptions;
+using Shared.HttpClients.Interfaces;
 
 namespace ChatApp.ChatService.Core.Services
 {
@@ -209,8 +210,17 @@ namespace ChatApp.ChatService.Core.Services
             var chat = await _chatRepository.GetChatByUsernamesAsync(username1, username2);
             if (chat == null)
             {
-                _logger.LogWarning("Chat not found between {Username1} and {Username2}.", username1, username2);
-                throw new NotFoundException($"Chat not found between {username1} and {username2}.");
+                try
+                {
+                    ServiceResponse<PrivateChatDto> newChatResponse = await CreateOneToOneChatAsync(username1, username2);
+                    if(newChatResponse.Success)
+                    {
+                        chat = await _chatRepository.GetChatByUsernamesAsync(username1, username2);
+                    }
+                } catch(Exception)
+                {
+                    throw;
+                }
             }
 
             // Fetch ParticipantsDetails

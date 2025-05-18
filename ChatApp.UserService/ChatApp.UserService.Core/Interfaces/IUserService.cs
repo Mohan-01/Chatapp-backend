@@ -8,7 +8,7 @@ namespace ChatApp.UserService.Core.Interfaces
 {
     public interface IUserService
     {
-        Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username);
+        Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username, string? accessToken = null);
         Task<ServiceResponse<UserDto>> UpdateUserAsync(string username, UpdateUserRequest updateUserRequest);
         
         //Task<ServiceResponse<string>> DeleteUserAsync(string username);

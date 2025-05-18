@@ -5,6 +5,7 @@ using ChatApp.ChatService.Core.Interfaces;
 using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using ChatApp.ChatService.Core.RequestResponseModels.Friend;
 using Microsoft.Extensions.Logging;
+using Shared.HttpClients.Interfaces;
 using Shared.Models.User;
 
 // No need of newtonsoft

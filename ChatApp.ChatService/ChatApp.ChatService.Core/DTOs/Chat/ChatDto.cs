@@ -12,6 +12,6 @@ namespace ChatApp.ChatService.Core.DTOs.Chat
         public string Username2 { get; set; } = string.Empty;
         public List<MessageDto> Messages { get; set; } = [];
         public DateTime CreatedAt { get; set; }  // Timestamp of chat creation
-        public ChatStatus ChatStatus { get; set; }  // Chat status (e.g., "Active", "Archived")
+        public string ChatStatus { get; set; } = "Active"; // Chat status (e.g., "Active", "Archived")
     }
 }

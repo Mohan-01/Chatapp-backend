@@ -17,7 +17,7 @@ namespace ChatApp.UserService.Infrastructure.BackgroundServices
         {
             using (var scope = _serviceProvider.CreateScope())
             {
-                var consumer = scope.ServiceProvider.GetRequiredService<IUserDeletedConsumer>();
+                var consumer = scope.ServiceProvider.GetRequiredService<IConsumer>();
                 consumer.StartConsuming();
             }
 

@@ -1,11 +1,11 @@
-﻿using ChatApp.ChatService.Core.DTOs.Chat;
-using ChatApp.ChatService.Core.Entities.Message;
+﻿using ChatApp.ChatService.Core.Entities.Message;
 using ChatApp.ChatService.Core.Enums.Message;
 using ChatApp.ChatService.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Shared.HttpClients.Interfaces;
 
 namespace ChatApp.ChatService.Infrastructure.Repositories
 {
@@ -14,7 +14,6 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         private readonly IMongoCollection<Message> _messages;
         private readonly ILogger<IMessageRepository> _logger;
         private readonly IChatApiClient _chatApiClient;
-        private readonly string _internalApiSecret;
 
         public MessageRepository(IConfiguration config, IMongoClient client, ILogger<IMessageRepository> logger, IChatApiClient chatApiClient)
         {
@@ -26,7 +25,6 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
             _logger = logger;
 
             _chatApiClient = chatApiClient;
-            _internalApiSecret = config["InternalApi:Secret"] ?? "your-fallback-secret";
         }
 
         // Get a specific message by its ID

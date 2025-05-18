@@ -1,4 +1,4 @@
-﻿namespace ChatApp.ChatService.Core.Interfaces
+﻿namespace ChatApp.ChatService.Core.Interfaces.NotUsing
 {
     public interface IMessageApiClient
     {

@@ -18,7 +18,7 @@ namespace ChatApp.UserService.Infrastructure.BackgroundServices
             Console.WriteLine("UsernameChangedConsumerService is running.");
             using (var scope = _serviceProvider.CreateScope())
             {
-                var _consumer = scope.ServiceProvider.GetRequiredService<IUsernameChangedConsumer>();
+                var _consumer = scope.ServiceProvider.GetRequiredService<IConsumer>();
                 _consumer.StartConsuming();
             }
             return Task.CompletedTask;

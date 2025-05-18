@@ -11,13 +11,13 @@ using Shared.EventContracts;
 
 namespace ChatApp.UserService.Infrastructure.Consumers
 {
-    public class EmailChangedConsumer : IEmailChangedConsumer
+    public class EmailChangedConsumer : IConsumer
     {
         private readonly IRabbitMQConnection _rabbitConnection;
-        private readonly ILogger<IEmailChangedConsumer> _logger;
+        private readonly ILogger<IConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public EmailChangedConsumer(IRabbitMQConnection rabbitConnection, ILogger<IEmailChangedConsumer> logger, IServiceProvider serviceProvider)
+        public EmailChangedConsumer(IRabbitMQConnection rabbitConnection, ILogger<IConsumer> logger, IServiceProvider serviceProvider)
         {
             _rabbitConnection = rabbitConnection;
             _logger = logger;

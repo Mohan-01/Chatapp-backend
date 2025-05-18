@@ -1,32 +1,26 @@
-# -------- Base runtime image --------
+# Dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-EXPOSE 5001
+EXPOSE 80
 
-# -------- Build image --------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy only the csproj and restore early (layer caching)
-COPY ["AuthService.csproj", "./"]
-RUN dotnet restore "AuthService.csproj"
+# Copy solution and restore
+COPY ["*.sln", "./"]
+COPY ["ChatApp.Shared/ChatApp.Shared.csproj", "ChatApp.Shared/"]
+COPY ["ChatApp.AuthService/AuthService.Core/AuthService.Core.csproj", "ChatApp.AuthService/AuthService.Core/"]
+COPY ["ChatApp.AuthService/AuthService.Infrastructure/AuthService.Infrastructure.csproj", "ChatApp.AuthService/AuthService.Infrastructure/"]
+COPY ["ChatApp.AuthService/AuthService/AuthService.API.csproj", "ChatApp.AuthService/AuthService/"]
 
-# Copy the rest of the source
+RUN dotnet restore
+
+# Copy everything else and build
 COPY . .
+WORKDIR "/src/ChatApp.AuthService/AuthService"
+RUN dotnet publish -c Release -o /app/publish
 
-# Build the app
-RUN dotnet build "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-# -------- Publish image --------
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "AuthService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# -------- Final runtime image --------
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
-
-# Set environment variables (RabbitMQ host etc. are better set in docker-compose.yml not here)
-ENTRYPOINT ["dotnet", "AuthService.dll"]
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "AuthService.API.dll"]

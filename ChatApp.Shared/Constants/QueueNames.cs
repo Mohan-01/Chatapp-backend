@@ -13,10 +13,14 @@ namespace Shared.Constants
         public const string UsernameChangedQueue = "user.usernamechanged.queue";
         public const string EmailChangedQueue = "user.emailchanged.queue";
 
+        public const string SendMessageQueue = "chat.message.sent";
+
         // Dead Letter Queues (DLQ)
         public const string UserRegisteredDLQ = "user.registered.queue.dlq";
         public const string UserDeletedDLQ = "user.deleted.queue.dlq";
         public const string UsernameChangedDLQ = "user.usernamechanged.queue.dlq";
         public const string EmailChangedDLQ = "user.emailchanged.queue.dlq";
+
+        public const string SendMessageDLQ = "chat.message.sent.dlq";
     }
 }

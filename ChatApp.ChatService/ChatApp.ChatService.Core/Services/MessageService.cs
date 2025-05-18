@@ -7,6 +7,9 @@ using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using ChatApp.ChatService.Core.RequestResponseModels.Message;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using Shared.Constants;
+using Shared.EventContracts;
+using Shared.Producers;
 
 namespace ChatService.Services
 {
@@ -14,11 +17,13 @@ namespace ChatService.Services
     {
         private readonly IMessageRepository _messageRepository;
         private readonly ILogger<IMessageService> _logger;
+        private readonly IEventPublisher _eventPublisher;
 
-        public MessageService(IMessageRepository messageRepository, ILogger<IMessageService> logger)
+        public MessageService(IMessageRepository messageRepository, ILogger<IMessageService> logger, IEventPublisher eventPublisher)
         {
             _messageRepository = messageRepository;
             _logger = logger;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<Message> GetByIdAsync(string messageId)
@@ -66,6 +71,13 @@ namespace ChatService.Services
                 //OR
                 await _messageRepository.SendMessageAsync(message);
                 MessageDto data = MappingToDtos.MapMessageToDto(message);
+
+                _eventPublisher.Publish(QueueNames.SendMessageQueue, new MessageSentEvent
+                {
+                    MessageId = message.MessageId.ToString(),
+                    ChatId = message.ChatId.ToString()
+                });
+
                 return new ServiceResponse<MessageDto>
                 {
                     Success = true,

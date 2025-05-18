@@ -9,7 +9,7 @@ namespace ChatApp.ChatService.Core.DTOs.Message
         required public string To { get; set; }
         required public DateTime Time { get; set; }
         public string? Text { get; set; }
-        required public MessageType MessageType { get; set; } 
+        required public string MessageType { get; set; } 
         public List<AttachmentDto> Attachments { get; set; } = [];
         public string? RepliedTo { get; set; }
         required public bool IsEdited { get; set; }

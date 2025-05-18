@@ -5,33 +5,63 @@ using ChatApp.UserService.Core.ResponseDTOs;
 using Microsoft.Extensions.Logging;
 using Shared.Models.User;
 using ChatApp.UserService.Core.RequestDTOs;
-using ChatApp.UserService.Core.Extensions;
+using Shared.HttpClients.Interfaces;
+using System.Text.Json;
+using Shared.Models.Friend;
 
 namespace ChatApp.UserService.Core.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IFriendApiClient _friendApiClient;
         private readonly ILogger<IUserService> _logger;
+        
 
-        public UserService(IUserRepository userRepository, ILogger<IUserService> logger)
+        public UserService(IUserRepository userRepository, ILogger<IUserService> logger, IFriendApiClient friendApiClient)
         {
             _userRepository = userRepository;
+            _friendApiClient = friendApiClient;
             _logger = logger;
         }
-        
+
         #region Get User
-        public async Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username)
+        public async Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username, string? accessToken = null)
         {
-            User2 user = await _userRepository.GetByUsernameAsync(username);
-            
+            var user = await _userRepository.GetByUsernameAsync(username);
+            UserDto userDto = new();
+
             if (user == null)
             {
                 return new ServiceResponse<UserDto>(false, "User not found", null);
             }
 
-            return new ServiceResponse<UserDto>(true, "User found", MappingToDtos.MapUserToDto(user));
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                userDto = MappingToDtos.MapUserToDto(user);
+
+                return new ServiceResponse<UserDto>(true, "User found", userDto);
+            }
+            // Call FriendshipService via FriendApiClient to get user's friends
+            string content = await _friendApiClient.GetFriendsListAsync(accessToken);
+
+            ServiceResponse<List<FriendDto>> response = JsonSerializer.Deserialize<ServiceResponse<List<FriendDto>>>(content);
+
+            if(response == null)
+            {
+                return new ServiceResponse<UserDto>
+                {
+                    Success = false,
+                    Message = "Something went wrong",
+                    Data = MappingToDtos.MapUserToDto(user)
+                };
+            }
+
+            userDto = MappingToDtos.MapUserToDto(user, response.Data);
+
+            return new ServiceResponse<UserDto>(true, "User found", userDto);
         }
+
         /*
         public async Task<ServiceResponse<UserDto>> GetByEmailAsync(string email)
         {
@@ -45,9 +75,9 @@ namespace ChatApp.UserService.Core.Services
             return new ServiceResponse<UserDto>(true, "User found", MappingToDtos.MapUserToDto(user));
         }
         */
-        
+
         #endregion
-        
+
         /*
         public async Task<ServiceResponse<string>> CreateUserAsync(User2 user)
         {
@@ -73,7 +103,7 @@ namespace ChatApp.UserService.Core.Services
             }
         }
         */
-        
+
         public async Task<ServiceResponse<UserDto>> UpdateUserAsync(string username, UpdateUserRequest updateUserRequest)
         {
             ServiceResponse<UserDto> user = await GetByUsernameAsync(username);

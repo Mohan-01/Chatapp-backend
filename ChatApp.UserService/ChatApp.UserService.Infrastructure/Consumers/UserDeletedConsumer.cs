@@ -11,13 +11,13 @@ using Shared.EventContracts;
 
 namespace ChatApp.UserService.Infrastructure.Consumers
 {
-    public class UserDeletedConsumer : IUserDeletedConsumer
+    public class UserDeletedConsumer : IConsumer
     {
         private readonly IRabbitMQConnection _rabbitConnection;
-        private readonly ILogger<IUserDeletedConsumer> _logger;
+        private readonly ILogger<IConsumer> _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public UserDeletedConsumer(IRabbitMQConnection rabbitConnection, ILogger<IUserDeletedConsumer> logger, IServiceProvider serviceProvider)
+        public UserDeletedConsumer(IRabbitMQConnection rabbitConnection, ILogger<IConsumer> logger, IServiceProvider serviceProvider)
         {
             _rabbitConnection = rabbitConnection;
             _logger = logger;

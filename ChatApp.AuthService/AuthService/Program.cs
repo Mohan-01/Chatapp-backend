@@ -65,6 +65,26 @@ namespace AuthService.API
 
             builder.Services.AddSwaggerGen(c =>
             {
+                // ✅ API metadata
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Authentication Microservice API",
+                    Version = "v1",
+                    Description = "This API provides endpoints for authentication in the Real-Time Chat Application.",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "MVK Seshu M",
+                        Email = "mmvkseshu@gmail.com",
+                        Url = new Uri("https://github.com/mvk-seshu-m")
+                    },
+                    License = new OpenApiLicense
+                    {
+                        Name = "MIT License",
+                        Url = new Uri("https://opensource.org/licenses/MIT")
+                    }
+                });
+
+                // ✅ JWT Bearer security scheme
                 c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -72,7 +92,7 @@ namespace AuthService.API
                     Scheme = "Bearer",
                     BearerFormat = "JWT",
                     In = ParameterLocation.Header,
-                    Description = "Enter 'Bearer {your_token}'"
+                    Description = "Enter 'Bearer {your_token}' in the value field below."
                 });
 
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -86,10 +106,11 @@ namespace AuthService.API
                                 Id = "Bearer"
                             }
                         },
-                        new string[] {}
+                        Array.Empty<string>()
                     }
                 });
             });
+
 
             ConfigureCors(builder);
             ConfigureTokenHandler(builder);

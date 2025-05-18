@@ -17,7 +17,7 @@ namespace ChatApp.ChatService.Core.Mappings
                 To = message.ReceiverUsername,
                 Time = message.SentAt,
                 Text = message.Text,
-                MessageType = message.MessageType,
+                MessageType = message.MessageType.ToString(),
                 IsEdited = message.IsEdited,
                 MessageStatus = message.MessageStatus.ToString()
             };
@@ -50,7 +50,7 @@ namespace ChatApp.ChatService.Core.Mappings
                 Username1 = chat.ParticipantsDetails[0].Username, // Access first participant
                 Username2 = chat.ParticipantsDetails[1].Username, // Access second participant
                 CreatedAt = chat.CreatedAt,
-                ChatStatus = chat.ChatStatus
+                ChatStatus = chat.ChatStatus.ToString()
             };
         }
 

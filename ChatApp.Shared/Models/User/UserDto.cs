@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Shared.Models.Friend;
+using System.ComponentModel.DataAnnotations;
 
 namespace Shared.Models.User
 {
@@ -19,5 +20,9 @@ namespace Shared.Models.User
         [Required]
         public string Status { get; set; } = null!;
         public DateTime LastSeen { get; set; }
+
+        #region Friends List
+        public List<FriendDto>? Friends { get; set; }
+        #endregion
     }
 }
