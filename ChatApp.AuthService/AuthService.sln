@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.API", "AuthService.API.csproj", "{A71803BC-16E9-417F-B92C-8CDA95AF2C54}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Core", "..\AuthService.Core\AuthService.Core.csproj", "{36B4418E-1689-426E-A7FE-281C8357D85D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthService.Infrastructure", "..\AuthService.Infrastructure\AuthService.Infrastructure.csproj", "{BA16B784-B70E-40E4-9182-1127BE9198D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "..\..\ChatApp.Shared\Shared.csproj", "{86D58D30-B959-935B-CDA7-4B0ACAB3A890}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A71803BC-16E9-417F-B92C-8CDA95AF2C54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A71803BC-16E9-417F-B92C-8CDA95AF2C54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A71803BC-16E9-417F-B92C-8CDA95AF2C54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A71803BC-16E9-417F-B92C-8CDA95AF2C54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36B4418E-1689-426E-A7FE-281C8357D85D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36B4418E-1689-426E-A7FE-281C8357D85D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36B4418E-1689-426E-A7FE-281C8357D85D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36B4418E-1689-426E-A7FE-281C8357D85D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA16B784-B70E-40E4-9182-1127BE9198D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA16B784-B70E-40E4-9182-1127BE9198D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA16B784-B70E-40E4-9182-1127BE9198D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA16B784-B70E-40E4-9182-1127BE9198D0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86D58D30-B959-935B-CDA7-4B0ACAB3A890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86D58D30-B959-935B-CDA7-4B0ACAB3A890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86D58D30-B959-935B-CDA7-4B0ACAB3A890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86D58D30-B959-935B-CDA7-4B0ACAB3A890}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A825D2A9-9550-47F4-958A-6BE6AA0C8ECE}
+	EndGlobalSection
+EndGlobal

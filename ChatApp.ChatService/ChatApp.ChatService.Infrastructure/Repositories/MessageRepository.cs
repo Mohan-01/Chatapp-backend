@@ -115,18 +115,26 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
             var filter = Builders<Message>.Filter.And(
                 Builders<Message>.Filter.Eq(m => m.ChatId, chatObjectId),
                 Builders<Message>.Filter.Eq(m => m.ReceiverUsername, userId),
-                Builders<Message>.Filter.Eq(m => m.MessageStatus, MessageStatus.Seen)
+                Builders<Message>.Filter.Eq(m => m.MessageStatus, MessageStatus.Delivered)
             );
             var update = Builders<Message>.Update.Set(m => m.MessageStatus, MessageStatus.Seen);
             await _messages.UpdateManyAsync(filter, update);
         }
 
         // Update the status of a message (e.g., sent, delivered, read)
-        public async Task UpdateMessageStatusAsync(string messageId, MessageStatus status)
+        public async Task<Message> UpdateMessageStatusAsync(string messageId, MessageStatus status)
         {
-            var filter = Builders<Message>.Filter.Eq(m => m.MessageId.ToString(), messageId);
+            var filter = Builders<Message>.Filter.Eq(m => m.MessageId, new ObjectId(messageId));
             var update = Builders<Message>.Update.Set(m => m.MessageStatus, status);
-            await _messages.UpdateOneAsync(filter, update);
+            var updatedMessage = await _messages.FindOneAndUpdateAsync(
+                filter,
+                update,
+                new FindOneAndUpdateOptions<Message>
+                {
+                    ReturnDocument = ReturnDocument.After // Return the updated document
+                });
+
+            return updatedMessage;
         }
     }
 }

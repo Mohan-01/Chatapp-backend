@@ -1,0 +1,36 @@
+# Stage 1: Build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY ChatApp.UserService/*.sln ./ChatApp.UserService/
+COPY ChatApp.UserService/ChatApp.UserService.API/ChatApp.UserService.API.csproj ./ChatApp.UserService/ChatApp.UserService.API/
+COPY ChatApp.UserService/ChatApp.UserService.Core/ChatApp.UserService.Core.csproj ./ChatApp.UserService/ChatApp.UserService.Core/
+COPY ChatApp.UserService/ChatApp.UserService.Infrastructure/ChatApp.UserService.Infrastructure.csproj ./ChatApp.UserService/ChatApp.UserService.Infrastructure/
+COPY ChatApp.Shared/Shared.csproj ./ChatApp.Shared/
+
+# Restore dependencies
+RUN dotnet restore ./ChatApp.UserService/ChatApp.UserService.API.sln
+
+# Copy all source files
+COPY ChatApp.UserService/ChatApp.UserService.API/ ./ChatApp.UserService/ChatApp.UserService.API/
+COPY ChatApp.UserService/ChatApp.UserService.Core/ ./ChatApp.UserService/ChatApp.UserService.Core/
+COPY ChatApp.UserService/ChatApp.UserService.Infrastructure/ ./ChatApp.UserService/ChatApp.UserService.Infrastructure/
+COPY ChatApp.Shared/ ./ChatApp.Shared/
+
+# Build and publish the project
+RUN dotnet publish ./ChatApp.UserService/ChatApp.UserService.API/ChatApp.UserService.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# Stage 2: Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy published files from build stage
+COPY --from=build /app/publish .
+
+# Expose port (adjust if needed)
+EXPOSE 5002
+
+ENV ASPNETCORE_URLS=http://+:5002
+# Run the app
+ENTRYPOINT ["dotnet", "ChatApp.UserService.API.dll"]

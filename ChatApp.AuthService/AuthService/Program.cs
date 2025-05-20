@@ -36,6 +36,8 @@ namespace AuthService.API
 
             var app = builder.Build();
             ConfigureMiddleware(app);
+            app.Urls.Clear();
+            app.Urls.Add("http://0.0.0.0:5001");
             app.Run();
         }
         private static void ConfigureSerilog(WebApplicationBuilder builder)

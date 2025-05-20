@@ -154,17 +154,44 @@ namespace ChatService.Services
             await _messageRepository.MarkChatMessagesAsReadAsync(chatId, userId);
         }
 
-        public async Task UpdateMessageStatusAsync(string messageId, string status)
+        public async Task<ServiceResponse<MessageDto>> UpdateMessageStatusAsync(string messageId, MessageStatus status)
         {
-            if (Enum.TryParse<MessageStatus>(status, out var parsedStatus))
+            try
             {
-                await _messageRepository.UpdateMessageStatusAsync(messageId, parsedStatus);
+                Message? updatedMessage = await _messageRepository.UpdateMessageStatusAsync(messageId, status);
+
+                if (updatedMessage == null)
+                {
+                    return new ServiceResponse<MessageDto>
+                    {
+                        Success = false,
+                        Message = "Message not found.",
+                        Data = null
+                    };
+                }
+
+                MessageDto messageDto = MappingToDtos.MapMessageToDto(updatedMessage); // <-- Assuming this method exists
+
+                return new ServiceResponse<MessageDto>
+                {
+                    Success = true,
+                    Message = "Message status updated successfully.",
+                    Data = messageDto
+                };
             }
-            else
+            catch (Exception ex)
             {
-                throw new ArgumentException($"Invalid message status: {status}", nameof(status));
+                // Log exception if needed
+
+                return new ServiceResponse<MessageDto>
+                {
+                    Success = false,
+                    Message = $"An error occurred while updating message status: {ex.Message}",
+                    Data = null
+                };
             }
         }
+
 
     }
 }

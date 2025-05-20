@@ -6,13 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>8babaa66-2265-4391-9337-3f5dce1e448b</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
+    <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove=".dockerignore" />
     <None Remove="docker-compose.yml" />
-    <None Remove="Dockerfile" />
   </ItemGroup>
 
   <ItemGroup>

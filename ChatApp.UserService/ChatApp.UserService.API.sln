@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.UserService.API", "ChatApp.UserService.API\ChatApp.UserService.API.csproj", "{09CCD017-B085-7931-ADA4-00B9F056D626}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.UserService.Core", "ChatApp.UserService.Core\ChatApp.UserService.Core.csproj", "{A28A9239-2968-7506-D2A0-E3282EF74B92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApp.UserService.Infrastructure", "ChatApp.UserService.Infrastructure\ChatApp.UserService.Infrastructure.csproj", "{5818E967-011C-E46D-F1F6-629042C6DC42}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09CCD017-B085-7931-ADA4-00B9F056D626}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09CCD017-B085-7931-ADA4-00B9F056D626}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09CCD017-B085-7931-ADA4-00B9F056D626}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09CCD017-B085-7931-ADA4-00B9F056D626}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A28A9239-2968-7506-D2A0-E3282EF74B92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A28A9239-2968-7506-D2A0-E3282EF74B92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A28A9239-2968-7506-D2A0-E3282EF74B92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A28A9239-2968-7506-D2A0-E3282EF74B92}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5818E967-011C-E46D-F1F6-629042C6DC42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5818E967-011C-E46D-F1F6-629042C6DC42}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5818E967-011C-E46D-F1F6-629042C6DC42}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5818E967-011C-E46D-F1F6-629042C6DC42}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F114805C-86B0-4DB0-B7E0-9C4A4F84360E}
+	EndGlobalSection
+EndGlobal

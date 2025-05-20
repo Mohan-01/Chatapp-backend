@@ -1,5 +1,6 @@
 ﻿using ChatApp.ChatService.Core.DTOs.Message;
 using ChatApp.ChatService.Core.Entities.Message;
+using ChatApp.ChatService.Core.Enums.Message;
 using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using ChatApp.ChatService.Core.RequestResponseModels.Message;
 
@@ -35,6 +36,6 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task MarkChatMessagesAsReadAsync(string chatId, string userId);
 
         // Update the status of a message (e.g., Sent, Delivered, Seen)
-        Task UpdateMessageStatusAsync(string messageId, string status);
+        Task<ServiceResponse<MessageDto>> UpdateMessageStatusAsync(string messageId, MessageStatus status);
     }
 }

@@ -34,6 +34,6 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task MarkChatMessagesAsReadAsync(string chatId, string userId);
 
         // Update the status of a message (e.g., Sent, Delivered, Seen)
-        Task UpdateMessageStatusAsync(string messageId, MessageStatus status);
+        Task<Message> UpdateMessageStatusAsync(string messageId, MessageStatus status);
     }
 }

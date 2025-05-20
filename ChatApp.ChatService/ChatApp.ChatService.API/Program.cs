@@ -35,8 +35,10 @@ namespace ChatApp.ChatService.API
             ConfigureServices(builder.Services);
             ConfigureSwagger(builder.Services);
 
-            builder.Services.AddControllers();
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();  // or AddDebug() or other providers
 
+            builder.Services.AddControllers();
             var app = builder.Build();
             ConfigureMiddleware(app);
             app.Run();

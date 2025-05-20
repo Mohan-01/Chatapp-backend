@@ -9,6 +9,7 @@ using ChatApp.ChatService.Core.RequestResponseModels.Message;
 using ChatApp.ChatService.Core.DTOs.Message;
 using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using System.Threading.Tasks;
+using ChatApp.ChatService.Core.Enums.Message;
 
 namespace ChatApp.ChatService.API.Hubs
 {
@@ -18,11 +19,11 @@ namespace ChatApp.ChatService.API.Hubs
         private readonly IMessageService _messageService; // Service for managing messages in MongoDB
         //private readonly IRedisCacheService _redisCacheService; // NEW: Redis Service
         private readonly IUserApiClient _userApiClient; // Service for managing users in MongoDB
-        private readonly ILogger<Hub> _logger;
+        private readonly ILogger<ChatHub> _logger;
 
         private static readonly ConcurrentDictionary<string, ConnectedUser> ConnectedUsers = new(); // Store connected users
 
-        public ChatHub(IMessageService messageService, IUserApiClient userApiClient, ILogger<Hub> logger)
+        public ChatHub(IMessageService messageService, IUserApiClient userApiClient, ILogger<ChatHub> logger)
         {
             _messageService = messageService;
             //_redisCacheService = redisCacheService; // Inject Redis Cache Service
@@ -34,10 +35,8 @@ namespace ChatApp.ChatService.API.Hubs
         // Represents connected user details
         private class ConnectedUser
         {
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-            public string ConnectionId { get; set; }
-            public string UserName { get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+            required public string ConnectionId { get; set; }
+            required public string UserName { get; set; }
         }
 
         public override async Task OnConnectedAsync()
@@ -73,7 +72,7 @@ namespace ChatApp.ChatService.API.Hubs
                 _logger.LogInformation("HttpContext is null.");
             }
 
-            var username = Context.UserIdentifier;
+            var username = Context.User.Identity.Name;
             if (!string.IsNullOrEmpty(username))
             {
                 _logger.LogInformation($"user: {username}");
@@ -85,8 +84,16 @@ namespace ChatApp.ChatService.API.Hubs
                     return;
                 }
 
-                var user = Newtonsoft.Json.JsonConvert.DeserializeObject<List<UserDto>>(content).FirstOrDefault(); // Deserialize user details
+                var response = Newtonsoft.Json.JsonConvert.DeserializeObject<ServiceResponse<List<UserDto>>>(content);
 
+                if(response == null || !response.Success || response.Data == null)
+                {
+                    _logger.LogInformation("Failed to get user information from service");
+                    return;
+                }
+
+                var user = response.Data.FirstOrDefault();
+                
                 if (user == null)
                 {
                     _logger.LogInformation("User not found.");
@@ -114,12 +121,6 @@ namespace ChatApp.ChatService.API.Hubs
             }
 
             await base.OnConnectedAsync();
-        }
-
-        public async Task JustCheck()
-        {
-            _logger.LogInformation("\n\nJust Chekcing.....\n\n");
-            await Clients.All.SendAsync("JustChecking");
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -167,6 +168,14 @@ namespace ChatApp.ChatService.API.Hubs
                 
                 _logger.LogInformation("Message saved in mongodb");
 
+                _logger.LogInformation($"Checking if recipient {messageDto.To} is connected");
+                foreach (var kvp in ConnectedUsers)
+                {
+                    _logger.LogInformation($"Connected: {kvp.Key} => {kvp.Value.ConnectionId}");
+                }
+
+                _logger.LogInformation($"messageDto.To = {messageDto.To}, Keys in ConnectedUsers: {string.Join(", ", ConnectedUsers.Keys)}");
+
                 // Check if the recipient is online
                 if (ConnectedUsers.TryGetValue(messageDto.To, out var recipient))
                 {
@@ -175,7 +184,7 @@ namespace ChatApp.ChatService.API.Hubs
                     _logger.LogInformation("Message delivered ReceiveMessage");
 
                     // Mark the message as delivered
-                    await _messageService.UpdateMessageStatusAsync(messageDto.MessageId, "Delivered");
+                    await _messageService.UpdateMessageStatusAsync(messageDto.MessageId, MessageStatus.Delivered);
                     messageDto.MessageStatus = "Delivered";
                     _logger.LogInformation("Updated status to delivered");
                 }
@@ -191,7 +200,7 @@ namespace ChatApp.ChatService.API.Hubs
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Error", $"Failed to send message. {ex}");
+                _logger.LogInformation($"Failed to send message. {ex}");
                 await Clients.Caller.SendAsync("Error", $"Failed to send message. {ex}");
             }
         }
@@ -201,16 +210,15 @@ namespace ChatApp.ChatService.API.Hubs
             _logger.LogInformation($"MarkMessageAsRead called with: {Message.MessageId}");
             try
             {
-                await _messageService.UpdateMessageStatusAsync(Message.MessageId, "Seen");
-                Message.MessageStatus = "Seen";
+                ServiceResponse<MessageDto> response = await _messageService.UpdateMessageStatusAsync(Message.MessageId, MessageStatus.Seen);
                 // Send status update to the sender and recipient
-                await Clients.User(Message.From).SendAsync("MessageStatusUpdated", Message);
+                await Clients.User(response.Data.From).SendAsync("MessageStatusUpdated", response.Data);
                 //await Clients.User(Message.To).SendAsync("MessageStatusUpdated", Message);
-                await Clients.Caller.SendAsync("MessageStatusUpdated", Message);
+                await Clients.Caller.SendAsync("MessageStatusUpdated", response.Data);
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Error", $"Failed to mark message as read. {ex}");
+                _logger.LogInformation($"Failed to mark message as read. {ex}");
                 await Clients.Caller.SendAsync("Error", $"Failed to mark message as read. {ex}");
 
             }
