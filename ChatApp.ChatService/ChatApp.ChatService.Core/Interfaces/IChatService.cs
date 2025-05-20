@@ -3,6 +3,7 @@ using ChatApp.ChatService.Core.Enums.Chat;
 using ChatApp.ChatService.Core.Entities.Message;
 using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using ChatApp.ChatService.Core.DTOs.Chat;
+using ChatApp.ChatService.Core.DTOs.Message;
 
 namespace ChatApp.ChatService.Core.Interfaces
 {
@@ -14,7 +15,7 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task<ServiceResponse<PrivateChatDto>> GetChatByUsernamesAsync(string username1, string username2);
         Task<ServiceResponse<List<PrivateChatDto>>> GetChatsByUsernameAsync(string username, ChatStatus chatStatus = ChatStatus.Active);
         Task<ServiceResponse<PrivateChatDto>> UpdateChatStatusAsync(string chatId, ChatStatus chatStatus);
-        Task UpdateChatMessagesAsync(ObjectId chatId, Message messages);
+        Task UpdateChatMessagesAsync(ObjectId chatId, MessageDto messages);
         Task ArchiveChatAsync(ObjectId chatId);
     }
 }

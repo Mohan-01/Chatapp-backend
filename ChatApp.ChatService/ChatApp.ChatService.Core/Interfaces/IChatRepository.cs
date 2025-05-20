@@ -1,8 +1,10 @@
-﻿using ChatApp.ChatService.Core.Entities.Message;
+﻿using ChatApp.ChatService.Core.DTOs.Message;
+using ChatApp.ChatService.Core.Entities.Message;
 using ChatApp.ChatService.Core.Enums.Chat;
 using ChatService.Entities.Chat;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Shared.EventContracts;
 
 namespace ChatApp.ChatService.Core.Interfaces
 {
@@ -18,8 +20,10 @@ namespace ChatApp.ChatService.Core.Interfaces
 
         Task<Chat?> UpdateChatStatusAsync(string chatId, ChatStatus chatStatus);
 
-        Task UpdateChatMessagesAsync(ObjectId chatId, Message messages);
+        Task UpdateChatMessagesAsync(ObjectId chatId, MessageDto messages);
         
         Task ArchiveChatAsync(ObjectId chatId);
+
+        Task<Chat> MessageRecievedEventAsync(MessageSentEvent messageSentEvent);
     }
 }

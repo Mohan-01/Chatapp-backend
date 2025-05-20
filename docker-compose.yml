@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  auth-service:
+    build:
+      context: ./ChatApp.AuthService/AuthService
+      dockerfile: Dockerfile
+    ports:
+      - "5001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  user-service:
+    build:
+      context: ./ChatApp.UserService/ChatApp.UserService.API
+      dockerfile: Dockerfile
+    ports:
+      - "5002:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  chat-service:
+    build:
+      context: ./ChatApp.ChatService/ChatApp.ChatService.API
+      dockerfile: Dockerfile
+    ports:
+      - "5003:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+
+volumes:
+  mongo-data:

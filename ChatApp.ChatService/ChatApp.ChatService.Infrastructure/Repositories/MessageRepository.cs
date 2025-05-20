@@ -13,9 +13,8 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
     {
         private readonly IMongoCollection<Message> _messages;
         private readonly ILogger<IMessageRepository> _logger;
-        private readonly IChatApiClient _chatApiClient;
 
-        public MessageRepository(IConfiguration config, IMongoClient client, ILogger<IMessageRepository> logger, IChatApiClient chatApiClient)
+        public MessageRepository(IConfiguration config, IMongoClient client, ILogger<IMessageRepository> logger)
         {
             var databaseName = config["MongoDbSettings:DatabaseName"];
             var collectionName = "Messages";
@@ -23,27 +22,26 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
             var database = client.GetDatabase(databaseName);
             _messages = database.GetCollection<Message>(collectionName);
             _logger = logger;
-
-            _chatApiClient = chatApiClient;
         }
 
         // Get a specific message by its ID
         public async Task<Message> GetByIdAsync(string messageId)
         {
-            return await _messages.Find(m => m.MessageId == messageId).FirstOrDefaultAsync();
+            return await _messages.Find(m => m.MessageId.ToString() == messageId).FirstOrDefaultAsync();
         }
 
         // Get all messages for a specific one-to-one chat
-        public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(string chatId)
+        public async Task<List<Message>> GetMessagesByChatIdAsync(ObjectId chatId)
         {
             return await _messages
-                .Find(m => m.ChatId == ObjectId.Parse(chatId))
+                .Find(m => m.ChatId == chatId)
                 .SortBy(m => m.SentAt)
                 .ToListAsync();
         }
 
+
         // Get all messages sent or received by a specific user
-        public async Task<IEnumerable<Message>> GetMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetMessagesByUserIdAsync(string userId)
         {
             return await _messages
                 .Find(m => m.SenderUsername == userId || m.ReceiverUsername == userId)
@@ -52,7 +50,7 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         }
 
         // Get all unread messages for a specific user
-        public async Task<IEnumerable<Message>> GetUnreadMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetUnreadMessagesByUserIdAsync(string userId)
         {
             return await _messages
                 .Find(m => (m.ReceiverUsername == userId || m.SenderUsername == userId) && m.MessageStatus != MessageStatus.Seen)
@@ -97,7 +95,7 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         // Soft delete a message (mark as deleted)
         public async Task DeleteMessageAsync(string messageId)
         {
-            var filter = Builders<Message>.Filter.Eq(m => m.MessageId, messageId);
+            var filter = Builders<Message>.Filter.Eq(m => m.MessageId.ToString(), messageId);
             var update = Builders<Message>.Update.Set(m => m.MessageStatus, MessageStatus.Deleted);
             await _messages.UpdateOneAsync(filter, update);
         }
@@ -105,7 +103,7 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         // Mark a specific message as read
         public async Task MarkMessageAsReadAsync(string messageId)
         {
-            var filter = Builders<Message>.Filter.Eq(m => m.MessageId, messageId);
+            var filter = Builders<Message>.Filter.Eq(m => m.MessageId.ToString(), messageId);
             var update = Builders<Message>.Update.Set(m => m.MessageStatus, MessageStatus.Seen);
             await _messages.UpdateOneAsync(filter, update);
         }
@@ -126,7 +124,7 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         // Update the status of a message (e.g., sent, delivered, read)
         public async Task UpdateMessageStatusAsync(string messageId, MessageStatus status)
         {
-            var filter = Builders<Message>.Filter.Eq(m => m.MessageId, messageId);
+            var filter = Builders<Message>.Filter.Eq(m => m.MessageId.ToString(), messageId);
             var update = Builders<Message>.Update.Set(m => m.MessageStatus, status);
             await _messages.UpdateOneAsync(filter, update);
         }

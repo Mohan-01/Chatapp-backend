@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using ChatApp.ChatService.Core.Interfaces;
 using ChatApp.ChatService.Core.Enums.Chat;
 using ChatApp.ChatService.Core.Entities.Message;
+using Shared.EventContracts;
+using ChatApp.ChatService.Core.DTOs.Message;
 
 namespace ChatApp.ChatService.Infrastructure.Repositories
 {
@@ -148,7 +150,7 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
         }
 
 
-        public async Task UpdateChatMessagesAsync(ObjectId chatId, Message newMessage)
+        public async Task UpdateChatMessagesAsync(ObjectId chatId, MessageDto newMessage)
         {
             if (newMessage == null)
                 throw new ArgumentNullException(nameof(newMessage), "New message cannot be null.");
@@ -182,6 +184,45 @@ namespace ChatApp.ChatService.Infrastructure.Repositories
                 var message = $"Failed to archive chat. Chat {chatId} may not exist or is already archived.";
                 _logger.LogWarning(message);
                 throw new InvalidOperationException(message);
+            }
+        }
+
+        public async Task<Chat> MessageRecievedEventAsync(MessageSentEvent messageSentEvent)
+        {
+            try
+            {
+                var chatId = new ObjectId(messageSentEvent.ChatId);
+                var messageId = new ObjectId(messageSentEvent.MessageId);
+
+                var updateDefinition = Builders<Chat>.Update
+                    .Push(chat => chat.MessageIds, messageId)
+                    .Set(chat => chat.LastMessageTime, DateTime.UtcNow);
+
+                var result = await _chats.UpdateOneAsync(
+                    chat => chat.ChatId == chatId,
+                    updateDefinition
+                );
+
+                if (result.MatchedCount == 0)
+                {
+                    _logger.LogWarning("No chat found for ChatId: {ChatId} while processing message event.", messageSentEvent.ChatId);
+                }
+                else
+                {
+                    _logger.LogInformation("MessageId {MessageId} added to ChatId {ChatId}", messageSentEvent.MessageId, messageSentEvent.ChatId);
+                }
+                var chat = await GetChatByIdAsync(chatId.ToString());
+
+                if(chat == null)
+                {
+                    throw new Exception("Something went wrong while fetching chat but message sent successfully");
+                }
+                return chat;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process MessageSentEvent for ChatId {ChatId}", messageSentEvent.ChatId);
+                throw;
             }
         }
     }

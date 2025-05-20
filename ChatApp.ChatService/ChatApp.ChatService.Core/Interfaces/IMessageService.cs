@@ -11,13 +11,13 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task<Message> GetByIdAsync(string messageId);
 
         // Get all messages for a specific one-to-one chat
-        Task<IEnumerable<Message>> GetMessagesByChatIdAsync(string chatId);
+        Task<ServiceResponse<List<MessageDto>>> GetMessagesByChatIdAsync(string chatId);
 
         // Get all messages sent or received by a specific user
-        Task<IEnumerable<Message>> GetMessagesByUserIdAsync(string userId);
+        Task<List<Message>> GetMessagesByUserIdAsync(string userId);
 
         // Get all unread messages for a specific user
-        Task<IEnumerable<Message>> GetUnreadMessagesByUserIdAsync(string userId);
+        Task<List<Message>> GetUnreadMessagesByUserIdAsync(string userId);
 
         // Create and send a new message
         Task<ServiceResponse<MessageDto>> SendMessageAsync(SendMessageDto message);

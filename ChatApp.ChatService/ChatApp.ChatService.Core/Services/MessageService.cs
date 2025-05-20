@@ -31,17 +31,54 @@ namespace ChatService.Services
             return await _messageRepository.GetByIdAsync(messageId);
         }
 
-        public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(string chatId)
+        public async Task<ServiceResponse<List<MessageDto>>> GetMessagesByChatIdAsync(string chatId)
         {
-            return await _messageRepository.GetMessagesByChatIdAsync(chatId);
+            try
+            {
+                if (string.IsNullOrEmpty(chatId))
+                {
+                    return new ServiceResponse<List<MessageDto>>
+                    {
+                        Success = false,
+                        Message = "Chat ID cannot be null or empty."
+                    };
+                }
+
+                if (!ObjectId.TryParse(chatId, out var chatObjectId))
+                {
+                    return new ServiceResponse<List<MessageDto>>
+                    {
+                        Success = false,
+                        Message = "Invalid Chat ID format."
+                    };
+                }
+
+                var messages = await _messageRepository.GetMessagesByChatIdAsync(chatObjectId);
+
+                return new ServiceResponse<List<MessageDto>>
+                {
+                    Success = true,
+                    Message = "Messages retrieved successfully.",
+                    Data = MappingToDtos.MapListOfMessagesToDto(messages)
+                };
+            }
+            catch (Exception ex)
+            {
+                // Optional: log exception here
+                return new ServiceResponse<List<MessageDto>>
+                {
+                    Success = false,
+                    Message = $"An error occurred while retrieving messages. {ex}"
+                };
+            }
         }
 
-        public async Task<IEnumerable<Message>> GetMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetMessagesByUserIdAsync(string userId)
         {
             return await _messageRepository.GetMessagesByUserIdAsync(userId);
         }
 
-        public async Task<IEnumerable<Message>> GetUnreadMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetUnreadMessagesByUserIdAsync(string userId)
         {
             return await _messageRepository.GetUnreadMessagesByUserIdAsync(userId);
         }
@@ -64,9 +101,9 @@ namespace ChatService.Services
                 // Log the message creation and sending process
                 _logger.LogInformation("Attempting to send message {MessageId} for chat {ChatId}.", message.MessageId, message.ChatId);
 
-                // Send the message to the repository
-                Message createdMessage = await _messageRepository.SendMessageAsync(message);
-                MappingToDtos.MapMessageToDto(createdMessage);
+                //// Send the message to the repository
+                //Message createdMessage = await _messageRepository.SendMessageAsync(message);
+                //MappingToDtos.MapMessageToDto(createdMessage);
 
                 //OR
                 await _messageRepository.SendMessageAsync(message);
@@ -92,6 +129,10 @@ namespace ChatService.Services
             }
         }
 
+        public async Task MessageSendEventAsync(MessageSentEvent messageSentEvent)
+        {
+
+        }
 
         public async Task UpdateMessageAsync(Message message)
         {

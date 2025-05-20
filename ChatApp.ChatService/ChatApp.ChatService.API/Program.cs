@@ -11,6 +11,12 @@ using ChatService.Mappings;
 using Shared.Middlewares;
 using Shared.HttpClients.Interfaces;
 using Shared.HttpClients;
+using ChatApp.ChatService.API.Hubs;
+using ChatService.Services;
+using Shared.Producers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace ChatApp.ChatService.API
 {
@@ -23,7 +29,7 @@ namespace ChatApp.ChatService.API
             ConfigureSerilog(builder);
             ConfigureMongoDb(builder.Services, builder.Configuration);
             ConfigureRabbitMq(builder.Services, builder.Configuration);
-            //ConfigureAuthentication(builder);
+            ConfigureAuthentication(builder);
             ConfigureAuthorization(builder);
             ConfigureCors(builder.Services);
             ConfigureServices(builder.Services);
@@ -89,7 +95,7 @@ namespace ChatApp.ChatService.API
 
         }
 
-        /* private static void ConfigureAuthentication(WebApplicationBuilder builder)
+        private static void ConfigureAuthentication(WebApplicationBuilder builder)
          {
              var jwtKey = builder.Configuration["Jwt:Key"];
              var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -133,7 +139,7 @@ namespace ChatApp.ChatService.API
                          }
                      };
                  });
-         }*/
+         }
 
         private static void ConfigureAuthorization(WebApplicationBuilder builder)
         {
@@ -177,13 +183,25 @@ namespace ChatApp.ChatService.API
 
         private static void ConfigureServices(IServiceCollection services)
         {
+            services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+            }).AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            });
+            services.AddHttpContextAccessor();
             services.AddAutoMapper(typeof(MappingProfile));
             
             services.AddSingleton<IChatRepository, ChatRepository>();
             services.AddScoped<IChatService, Core.Services.ChatService>();
 
+            services.AddSingleton<IMessageRepository, MessageRepository>();
+            services.AddScoped<IMessageService, MessageService>();
+
+            services.AddScoped<IEventPublisher, EventPublisher>();
+
             services.AddSingleton<IUserApiClient, UserApiClient>();
-            services.AddSingleton<IMessageApiClient, MessageApiClient>();
             services.AddSingleton<IChatApiClient, ChatApiClient>();
         }
 
@@ -224,9 +242,10 @@ namespace ChatApp.ChatService.API
             app.UseCors("AllowAllOrigins");
             app.UseSwagger();
             app.UseSwaggerUI();
-            //app.UseAuthentication();
+            app.UseAuthentication();
             app.UseMiddleware<AuthenticationMiddleware>();
             app.UseAuthorization();
+            app.MapHub<ChatHub>("/chathub");
             app.MapControllers();
         }
     }

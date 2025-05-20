@@ -1,4 +1,4 @@
-﻿namespace ChatApp.ChatService.Core.Interfaces.NotUsing
+﻿namespace Shared.HttpClients.Interfaces
 {
     public interface IUserApiClient
     {

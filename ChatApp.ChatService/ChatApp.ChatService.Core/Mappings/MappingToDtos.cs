@@ -24,6 +24,13 @@ namespace ChatApp.ChatService.Core.Mappings
 #pragma warning restore CS8601 // Possible null reference assignment.
         }
 
+        public static MessageDto MapMessageToDto(MessageDto message)
+        {
+#pragma warning disable CS8601 // Possible null reference assignment.
+            return message;
+#pragma warning restore CS8601 // Possible null reference assignment.
+        }
+
         public static List<MessageDto> MapListOfMessagesToDto(IEnumerable<Message> messages)
         {
             return messages.Select(message => MappingToDtos.MapMessageToDto(message)).ToList();
@@ -53,6 +60,5 @@ namespace ChatApp.ChatService.Core.Mappings
                 ChatStatus = chat.ChatStatus.ToString()
             };
         }
-
     }
 }

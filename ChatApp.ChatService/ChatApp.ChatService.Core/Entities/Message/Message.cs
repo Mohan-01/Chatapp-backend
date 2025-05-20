@@ -7,7 +7,9 @@ namespace ChatApp.ChatService.Core.Entities.Message
     public class Message
     {
         [BsonId]
-        public string MessageId { get; set; } = string.Empty;
+        [BsonRepresentation(BsonType.ObjectId)]
+
+        public ObjectId MessageId { get; set; }
 
         // Every message should be part of a chat
         [BsonRepresentation(BsonType.ObjectId)]

@@ -55,12 +55,12 @@ namespace Shared.Middlewares
                     return;
                 }
 
-                if (!IsApiRequest(context.Request.Path))
-                {
-                    _logger.LogInformation("Non-API request detected, skipping authentication.");
-                    await _next(context);
-                    return;
-                }
+                //if (!IsApiRequest(context.Request.Path))
+                //{
+                //    _logger.LogInformation("Non-API request detected, skipping authentication.");
+                //    await _next(context);
+                //    return;
+                //}
 
                 bool isValid = await ValidateTokenWithAuthServiceAsync(context, accessToken);
 

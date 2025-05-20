@@ -184,8 +184,6 @@ namespace ChatApp.UserService.API
             services.AddScoped<IUserService, ChatApp.UserService.Core.Services.UserService>();
 
             services.AddScoped<IUserEventsService, ChatApp.UserService.Core.Services.UserEventsService>();
-
-            services.AddSingleton<IFriendApiClient, FriendApiClient>();
         }
 
         private static void ConfigureSwagger(IServiceCollection services)

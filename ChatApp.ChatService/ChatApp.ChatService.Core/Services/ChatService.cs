@@ -13,6 +13,7 @@ using ChatApp.ChatService.Core.Mappings;
 using MongoDB.Driver;
 using ChatApp.ChatService.Core.Exceptions;
 using Shared.HttpClients.Interfaces;
+using ChatApp.ChatService.Core.DTOs.Message;
 
 namespace ChatApp.ChatService.Core.Services
 {
@@ -21,21 +22,21 @@ namespace ChatApp.ChatService.Core.Services
         private readonly IChatRepository _chatRepository;
         private readonly ILogger<IChatService> _logger;
         private readonly IUserApiClient _userApiClient;
-        private readonly IMessageApiClient _messageApiClient;
         private readonly IMongoClient _mongoClient;
+        private readonly IMessageService _messageService;
 
         public ChatService(
             IChatRepository chatRepository, 
             ILogger<IChatService> logger, 
             IUserApiClient userApiClient, 
             IMongoClient mongoClient,
-            IMessageApiClient messageApiClient)
+            IMessageService messageService)
         {
             _chatRepository = chatRepository;
             _logger = logger;
             _userApiClient = userApiClient;
-            _messageApiClient = messageApiClient;
             _mongoClient = mongoClient;
+            _messageService = messageService;
         }
 
 
@@ -162,22 +163,14 @@ namespace ChatApp.ChatService.Core.Services
                 chat.ParticipantsDetails = response.Data;
 
                 // Fetch messages from Message API
-                var messageContent = await _messageApiClient.GetMessagesByChatId(chatId);
-                var messages = JsonConvert.DeserializeObject<List<Message>>(messageContent);
+                ServiceResponse<List<MessageDto>> messageResponse = await _messageService.GetMessagesByChatIdAsync(chatId);
 
-                if (messages == null)
+                if (messageResponse == null || !messageResponse.Success || messageResponse.Data == null)
                 {
                     _logger.LogWarning("Failed to fetch messages for chat {ChatId}.", chatId);
-                    messages = [];
-                    //return new ServiceResponse<PrivateChatDto>
-                    //{
-                    //    Success = false,
-                    //    Message = $"Failed to fetch messages for chat {chatId}.",
-                    //    Data = null
-                    //};
                 }
 
-                chat.Messages = messages;
+                chat.Messages = messageResponse.Data;
 
                 // Map and return as DTO
                 PrivateChatDto chatDto = MappingToDtos.MapPrivateChatToDto(chat);
@@ -235,15 +228,13 @@ namespace ChatApp.ChatService.Core.Services
             chat.ParticipantsDetails = response.Data;
 
             // Fetch Messages
-            var messageContent = await _messageApiClient.GetMessagesByChatId(chat.ChatId.ToString());
-            var messages = JsonConvert.DeserializeObject<List<Message>>(messageContent);
+            ServiceResponse<List<MessageDto>> messageResponse = await _messageService.GetMessagesByChatIdAsync(chat.ChatId.ToString());
 
-            if (messages == null)
+            if (!messageResponse.Success || messageResponse.Data == null)
             {
                 _logger.LogError("Failed to fetch messages for chat {ChatId}.", chat.ChatId);
-                messages = [];
             }
-            chat.Messages = messages;
+            chat.Messages = messageResponse.Data;
 
             // Map to DTO
             PrivateChatDto chatDto = MappingToDtos.MapPrivateChatToDto(chat);
@@ -360,7 +351,7 @@ namespace ChatApp.ChatService.Core.Services
 
 
         // Update the list of messages in a chat
-        public async Task UpdateChatMessagesAsync(ObjectId chatId, Message messages)
+        public async Task UpdateChatMessagesAsync(ObjectId chatId, MessageDto messages)
         {
             await _chatRepository.UpdateChatMessagesAsync(chatId, messages);
         }

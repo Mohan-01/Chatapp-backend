@@ -8,14 +8,14 @@ namespace ChatApp.UserService.Core.Interfaces
 {
     public interface IUserService
     {
-        Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username, string? accessToken = null);
+        Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username);
         Task<ServiceResponse<UserDto>> UpdateUserAsync(string username, UpdateUserRequest updateUserRequest);
         
         //Task<ServiceResponse<string>> DeleteUserAsync(string username);
         //Task<ServiceResponse<string>> CreateUserAsync(User2 user);
         //Task<ServiceResponse<UserDto>> GetByEmailAsync(string email);
 
-        Task<ServiceResponse<List<UserDto>>> SearchUsersAsync(SearchUsersRequest dto);
+        Task<ServiceResponse<List<SearchUserDto>>> SearchUsersAsync(SearchUsersRequest dto);
         Task<ServiceResponse<List<UserDto>>> GetUsersBatchAsync(BatchUserRequest dto);
 
     }

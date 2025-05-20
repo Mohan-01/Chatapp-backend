@@ -5,59 +5,32 @@ using ChatApp.UserService.Core.ResponseDTOs;
 using Microsoft.Extensions.Logging;
 using Shared.Models.User;
 using ChatApp.UserService.Core.RequestDTOs;
-using Shared.HttpClients.Interfaces;
-using System.Text.Json;
-using Shared.Models.Friend;
 
 namespace ChatApp.UserService.Core.Services
 {
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly IFriendApiClient _friendApiClient;
         private readonly ILogger<IUserService> _logger;
         
 
-        public UserService(IUserRepository userRepository, ILogger<IUserService> logger, IFriendApiClient friendApiClient)
+        public UserService(IUserRepository userRepository, ILogger<IUserService> logger)
         {
             _userRepository = userRepository;
-            _friendApiClient = friendApiClient;
             _logger = logger;
         }
 
         #region Get User
-        public async Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username, string? accessToken = null)
+        public async Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username)
         {
             var user = await _userRepository.GetByUsernameAsync(username);
-            UserDto userDto = new();
 
             if (user == null)
             {
                 return new ServiceResponse<UserDto>(false, "User not found", null);
             }
 
-            if (string.IsNullOrEmpty(accessToken))
-            {
-                userDto = MappingToDtos.MapUserToDto(user);
-
-                return new ServiceResponse<UserDto>(true, "User found", userDto);
-            }
-            // Call FriendshipService via FriendApiClient to get user's friends
-            string content = await _friendApiClient.GetFriendsListAsync(accessToken);
-
-            ServiceResponse<List<FriendDto>> response = JsonSerializer.Deserialize<ServiceResponse<List<FriendDto>>>(content);
-
-            if(response == null)
-            {
-                return new ServiceResponse<UserDto>
-                {
-                    Success = false,
-                    Message = "Something went wrong",
-                    Data = MappingToDtos.MapUserToDto(user)
-                };
-            }
-
-            userDto = MappingToDtos.MapUserToDto(user, response.Data);
+            var userDto = MappingToDtos.MapUserToDto(user);
 
             return new ServiceResponse<UserDto>(true, "User found", userDto);
         }
@@ -125,21 +98,21 @@ namespace ChatApp.UserService.Core.Services
             return new ServiceResponse<UserDto>(true, "User updated successfully", MappingToDtos.MapUserToDto(updatedUser));
         }
         
-        public async Task<ServiceResponse<List<UserDto>>> SearchUsersAsync(SearchUsersRequest dto)
+        public async Task<ServiceResponse<List<SearchUserDto>>> SearchUsersAsync(SearchUsersRequest dto)
         {
             List<User2>? users = await _userRepository.SearchUsersAsync(dto.SearchTerm);
 
             if (users == null || users.Count == 0)
             {
                 _logger.LogInformation("No users found for search term: {SearchTerm}", dto.SearchTerm);
-                return new ServiceResponse<List<UserDto>>(false, "No users found", null);
+                return new ServiceResponse<List<SearchUserDto>>(false, "No users found", null);
             }
 
-            List<UserDto> resultedUsers = [..users.Select(user => MappingToDtos.MapUserToDto(user))];
+            List<SearchUserDto> resultedUsers = [..users.Select(user => MappingToDtos.MapUserToSearchUserDto(user))];
 
             _logger.LogInformation("Returning {Count} users from service", resultedUsers.Count);
 
-            return new ServiceResponse<List<UserDto>>(true, "Users found", resultedUsers);
+            return new ServiceResponse<List<SearchUserDto>>(true, "Users found", resultedUsers);
         }
 
         public async Task<ServiceResponse<List<UserDto>>> GetUsersBatchAsync(BatchUserRequest dto)
