@@ -4,22 +4,22 @@ WORKDIR /src
 
 # Copy solution and project files
 COPY ChatApp.AuthService/*.sln ./ChatApp.AuthService/
-COPY ChatApp.AuthService/AuthService/AuthService.API.csproj ./ChatApp.AuthService/AuthService/
-COPY ChatApp.AuthService/AuthService.Core/AuthService.Core.csproj ./ChatApp.AuthService/AuthService.Core/
-COPY ChatApp.AuthService/AuthService.Infrastructure/AuthService.Infrastructure.csproj ./ChatApp.AuthService/AuthService.Infrastructure/
+COPY ChatApp.AuthService/ChatApp.AuthService.API/ChatApp.AuthService.API.csproj ./ChatApp.AuthService/ChatApp.AuthService.API/
+COPY ChatApp.AuthService/ChatApp.AuthService.Core/ChatApp.AuthService.Core.csproj ./ChatApp.AuthService/ChatApp.AuthService.Core/
+COPY ChatApp.AuthService/ChatApp.AuthService.Infrastructure/ChatApp.AuthService.Infrastructure.csproj ./ChatApp.AuthService/ChatApp.AuthService.Infrastructure/
 COPY ChatApp.Shared/Shared.csproj ./ChatApp.Shared/
 
 # Restore dependencies
-RUN dotnet restore ./ChatApp.AuthService/AuthService.sln
+RUN dotnet restore ./ChatApp.AuthService/ChatApp.AuthService.API.sln
 
 # Copy all source files
-COPY ChatApp.AuthService/AuthService/ ./ChatApp.AuthService/AuthService/
-COPY ChatApp.AuthService/AuthService.Core/ ./ChatApp.AuthService/AuthService.Core/
-COPY ChatApp.AuthService/AuthService.Infrastructure/ ./ChatApp.AuthService/AuthService.Infrastructure/
+COPY ChatApp.AuthService/ChatApp.AuthService.API/ ./ChatApp.AuthService/ChatApp.AuthService.API/
+COPY ChatApp.AuthService/ChatApp.AuthService.Core/ ./ChatApp.AuthService/ChatApp.AuthService.Core/
+COPY ChatApp.AuthService/ChatApp.AuthService.Infrastructure/ ./ChatApp.AuthService/ChatApp.AuthService.Infrastructure/
 COPY ChatApp.Shared/ ./ChatApp.Shared/
 
 # Build and publish the project
-RUN dotnet publish ./ChatApp.AuthService/AuthService/AuthService.API.csproj -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish ./ChatApp.AuthService/ChatApp.AuthService.API/ChatApp.AuthService.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -29,8 +29,8 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 # Expose port (adjust if needed)
-EXPOSE 5001
+EXPOSE 5003
 
-ENV ASPNETCORE_URLS=http://+:5001
+ENV ASPNETCORE_URLS=http://+:5003
 # Run the app
-ENTRYPOINT ["dotnet", "AuthService.API.dll"]
+ENTRYPOINT ["dotnet", "ChatApp.AuthService.API.dll"]

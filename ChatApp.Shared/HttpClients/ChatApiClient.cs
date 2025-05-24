@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Shared.HttpClients.Interfaces;
+using System.Buffers.Text;
 
 namespace Shared.HttpClients
 {
@@ -9,18 +10,20 @@ namespace Shared.HttpClients
         private readonly HttpClient _httpClient;
         private readonly ILogger<IChatApiClient> _logger;
         private readonly string _internalApiSecret;
+        private readonly string BASE_URL;
 
         public ChatApiClient(HttpClient httpClient, ILogger<IChatApiClient> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
             _internalApiSecret = configuration["InternalApi:Secret"] ?? "fall-back-secret";
+            BASE_URL = configuration["Services:ChatService"] ?? "http://localhost:5003";
         }
 
         public async Task<string> GetChatByUsernamesAsync(string sender, string receiver)
         {
             // Call ChatService to get chat details
-            var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:5003/api/chat/{sender}/{receiver}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}/api/chat/{sender}/{receiver}");
             request.Headers.Add("X-Internal-Secret", _internalApiSecret);
 
             var response = await _httpClient.SendAsync(request);

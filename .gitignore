@@ -102,3 +102,7 @@ _ReSharper*/
 copilot-secret.json
 **/appsettings.json
 **/appsettings.Development.json
+**/appsettings.uat.json
+
+Chatap LLD.jpg
+docker build and run.txt

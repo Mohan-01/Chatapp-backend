@@ -17,6 +17,7 @@ using Shared.Producers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System;
 
 namespace ChatApp.ChatService.API
 {
@@ -26,6 +27,7 @@ namespace ChatApp.ChatService.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            ConfigureEnvironment(builder);
             ConfigureSerilog(builder);
             ConfigureMongoDb(builder.Services, builder.Configuration);
             ConfigureRabbitMq(builder.Services, builder.Configuration);
@@ -57,7 +59,18 @@ namespace ChatApp.ChatService.API
                     collectionName: "ChatServiceLogs")
                 .CreateLogger();
 
+            Log.Information("Running in environment: {Environment}", builder.Environment.EnvironmentName);
+
             builder.Host.UseSerilog();
+        }
+
+        private static void ConfigureEnvironment(WebApplicationBuilder builder)
+        {
+            builder.Configuration
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
         }
 
         private static void ConfigureMongoDb(IServiceCollection services, IConfiguration configuration)

@@ -15,6 +15,7 @@ namespace Shared.Middlewares
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthenticationMiddleware> _logger;
         private readonly HttpClient _httpClient;
+        private readonly string _authServiceUrl;
 
         public AuthenticationMiddleware(RequestDelegate next, IConfiguration configuration, ILogger<AuthenticationMiddleware> logger)
         {
@@ -22,6 +23,7 @@ namespace Shared.Middlewares
             _configuration = configuration;
             _logger = logger;
             _httpClient = new HttpClient(); // Later replace with IHttpClientFactory
+            _authServiceUrl = _configuration["Services:AuthService"] ?? "http://localhost:5001";
         }
 
         public async Task Invoke(HttpContext context)
@@ -88,11 +90,7 @@ namespace Shared.Middlewares
         {
             try
             {
-                string? validateEndpoint = _configuration["AuthService:ValidateTokenUrl"];
-                if (string.IsNullOrEmpty(validateEndpoint))
-                {
-                    validateEndpoint = "http://localhost:5001/api/Auth/validate-token"; // fallback
-                }
+                string validateEndpoint = $"{_authServiceUrl}/api/Auth/validate-token"; // fallback
 
                 ValidateTokenRequest requestBody = new()
                 {

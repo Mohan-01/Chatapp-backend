@@ -21,7 +21,8 @@ namespace ChatApp.UserService.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure logging, database, and services
+            // Configure env, logging, database, and services
+            ConfigureEnvironment(builder);
             ConfigureSerilog(builder);
             ConfigureMongoDb(builder.Services, builder.Configuration);
             ConfigureRabbitMq(builder.Services, builder.Configuration);
@@ -39,6 +40,15 @@ namespace ChatApp.UserService.API
             ConfigureMiddleware(app);
 
             app.Run();
+        }
+
+        private static void ConfigureEnvironment(WebApplicationBuilder builder)
+        {
+            builder.Configuration
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
         }
 
         private static void ConfigureSerilog(WebApplicationBuilder builder)

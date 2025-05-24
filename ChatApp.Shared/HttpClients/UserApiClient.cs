@@ -9,18 +9,20 @@ namespace Shared.HttpClients
         private readonly HttpClient _httpClient;
         private readonly ILogger<IUserApiClient> _logger;
         private readonly string _internalApiSecret;
+        private readonly string BASE_URL;
 
         public UserApiClient(HttpClient httpClient, ILogger<IUserApiClient> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
             _internalApiSecret = configuration["InternalApi:Secret"] ?? "fall-back-secret";
+            BASE_URL = configuration["Services:UserService"] ?? "http://localhost:5002";
         }
         public async Task<string> GetUsersByUsernamesBatch(string usernames)
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:5002/api/user/batch?usernames={usernames}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}/api/user/batch?usernames={usernames}");
                 request.Headers.Add("X-Internal-Secret", _internalApiSecret);
 
                 var response = await _httpClient.SendAsync(request);
@@ -42,7 +44,7 @@ namespace Shared.HttpClients
 
         public async Task<string> SearchUsersByUsername(string searchTerm)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"http://localhost:5002/api/user/search?SearchTerm={searchTerm}");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{BASE_URL}/api/user/search?SearchTerm={searchTerm}");
             request.Headers.Add("X-Internal-Secret", _internalApiSecret);
 
             var response = await _httpClient.SendAsync(request);
