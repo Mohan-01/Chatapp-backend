@@ -10,3 +10,4 @@ foreach ($file in $appSettingsFiles) {
 }
 
 Write-Host "[SOPS] All files encrypted."
+ 
