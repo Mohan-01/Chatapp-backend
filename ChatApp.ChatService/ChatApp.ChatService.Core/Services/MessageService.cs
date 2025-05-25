@@ -109,7 +109,7 @@ namespace ChatService.Services
                 await _messageRepository.SendMessageAsync(message);
                 MessageDto data = MappingToDtos.MapMessageToDto(message);
 
-                _eventPublisher.Publish(QueueNames.SendMessageQueue, new MessageSentEvent
+                _eventPublisher.Publish(Exchanges.ChatMessageExchange, RoutingKeys.ChatMessageSent, new MessageSentEvent
                 {
                     MessageId = message.MessageId.ToString(),
                     ChatId = message.ChatId.ToString()

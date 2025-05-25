@@ -43,7 +43,7 @@ namespace ChatApp.ChatService.Infrastructure.Consumers
                         }
 
                         // Declare queues safely
-                        _rabbitConnection.DeclareQueue(QueueNames.EmailChangedQueue, channel, withDeadLetter: false);
+                        _rabbitConnection.DeclareQueue(QueueNames.SendMessageQueue, Exchanges.ChatMessageExchange, RoutingKeys.ChatMessageSent, channel, withDeadLetter: true);
 
                         _logger.LogInformation("MessageSentConsumer started listening on {QueueName}", QueueNames.EmailChangedQueue);
 

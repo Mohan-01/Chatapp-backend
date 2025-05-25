@@ -38,6 +38,7 @@ namespace ChatApp.AuthService.Core.Utils
             {
                 new(JwtRegisteredClaimNames.Sub, user.Username),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(ClaimTypes.NameIdentifier, user.Username), // 🔐 Required for SignalR `Clients.User`
                 new(ClaimTypes.Name, user.Username),
                 new("username", user.Username),
                 new("email", user.Email),

@@ -9,16 +9,14 @@ namespace Shared.Configurations
         private readonly IConnectionFactory _connectionFactory;
         private IConnection _connection;
         private readonly ILogger<IRabbitMQConnection> _logger;
-
         private readonly object _lock = new();
 
         public RabbitMQConnection(IConnectionFactory connectionFactory, ILogger<IRabbitMQConnection> logger)
         {
-            _logger = logger;
             _connectionFactory = connectionFactory;
+            _logger = logger;
         }
 
-        
         public IConnection GetConnection()
         {
             if (_connection == null || !_connection.IsOpen)
@@ -28,95 +26,74 @@ namespace Shared.Configurations
                     if (_connection == null || !_connection.IsOpen)
                     {
                         _connection = _connectionFactory.CreateConnection();
+                        _logger.LogInformation("🔌 RabbitMQ connection established.");
                     }
                 }
             }
+
             return _connection;
         }
 
         public IConnection Reconnect()
         {
             Dispose();
-            _logger.LogInformation("Attempting to reconnect to RabbitMQ...");
+            _logger.LogInformation("🔄 Reconnecting to RabbitMQ...");
             return GetConnection();
         }
 
-        
-        private void DeclareExchange(string exchangeName, IModel channel, string exchangeType)
-        {
-            try
-            {
-                channel.ExchangeDeclare(exchangeName, exchangeType, durable: true);
-                _logger.LogInformation("Exchange declared: {ExchangeName}", exchangeName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error declaring exchange {ExchangeName}", exchangeName);
-            }
-        }
-
-        public void DeclareQueue(string queueName, IModel channel, bool withDeadLetter = false)
+        public void DeclareQueue(string queueName, string exchangeName, string routingKey, IModel channel, bool withDeadLetter = false)
         {
             var arguments = new Dictionary<string, object>();
 
             if (withDeadLetter)
             {
                 var dlqName = $"{queueName}.dlq";
-                channel.ExchangeDeclare("dead_letter_exchange", ExchangeType.Direct, durable: true);
-                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-                channel.QueueBind(dlqName, "dead_letter_exchange", routingKey: dlqName);
+                const string dlxName = "dead_letter_exchange";
 
-                arguments["x-dead-letter-exchange"] = "dead_letter_exchange";
-                arguments["x-dead-letter-routing-key"] = dlqName;
-            }
+                // Declare DLX and DLQ
+                channel.ExchangeDeclare(dlxName, ExchangeType.Topic, durable: true);
+                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false);
+                channel.QueueBind(dlqName, dlxName, routingKey: routingKey);
 
-            try
-            {
-                //Channel.QueueDelete(queueName);
-                //_logger.LogInformation("Deleted existing queue {QueueName} before redeclaration.", queueName);
-            }
-            catch (RabbitMQ.Client.Exceptions.OperationInterruptedException ex) when (ex.ShutdownReason.ReplyCode == 404)
-            {
-                _logger.LogWarning("Queue {QueueName} does not exist. Skipping deletion.", queueName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting queue {QueueName}", queueName);
-                throw;
+                // Bind DLX to main queue
+                arguments["x-dead-letter-exchange"] = dlxName;
+                arguments["x-dead-letter-routing-key"] = routingKey;
             }
 
-            //Channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: arguments);
-            channel.QueueDeclare(queueName, durable: true, exclusive: false, autoDelete: false, arguments: null);
-            _logger.LogInformation("Queue declared: {QueueName} (DLQ: {WithDeadLetter})", queueName, withDeadLetter);
+            // Declare topic exchange
+            channel.ExchangeDeclare(exchange: exchangeName, type: ExchangeType.Topic, durable: true);
+
+            // Declare the main queue with optional DLQ arguments
+            channel.QueueDeclare(queue: queueName,
+                                 durable: true,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: arguments.Count > 0 ? arguments : null);
+
+            // Bind queue to exchange using routing key
+            channel.QueueBind(queue: queueName, exchange: exchangeName, routingKey: routingKey);
+
+
+            _logger.LogInformation("📥 Queue declared: {QueueName} bound to exchange {Exchange} with routing key {RoutingKey} (DLQ: {WithDLQ})",
+        queueName, exchangeName, routingKey, withDeadLetter);
         }
-       
-        public void Dispose()
-        {
-            _connection?.Close();
-            _connection?.Dispose();
-        }
-        /*
+
         public void Dispose()
         {
             try
             {
-                if (Channel?.IsOpen == true)
-                {
-                    Channel.Close();
-                    _logger.LogInformation("RabbitMQ channel closed.");
-                }
-
                 if (_connection?.IsOpen == true)
                 {
                     _connection.Close();
-                    _logger.LogInformation("RabbitMQ connection closed.");
+                    _logger.LogInformation("🔌 RabbitMQ connection closed.");
                 }
+
+                _connection?.Dispose();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while closing RabbitMQ connection or channel.");
+                _logger.LogError(ex, "❌ Error while disposing RabbitMQ connection.");
             }
         }
-        */
     }
 }

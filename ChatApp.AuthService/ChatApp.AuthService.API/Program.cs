@@ -12,7 +12,7 @@ using ChatApp.AuthService.Core.Interfaces;
 using ChatApp.AuthService.Infrastructure.Repositories;
 using ChatApp.AuthService.Core.Services;
 using ChatApp.AuthService.Infrastructure.Configurations;
-using ChatApp.AuthService.Infrastructure.Producers;
+using Shared.Producers;
 using ChatApp.AuthService.API.Middlewares;
 using ChatApp.AuthService.API.Logging;
 using Microsoft.AspNetCore.Authorization;
@@ -64,6 +64,8 @@ namespace ChatApp.AuthService.API
                     builder.Configuration["MongoDbConfig:ConnectionString"] + builder.Configuration["MongoDbConfig:DatabaseName"],
                     collectionName: "AuthServiceLogs")
                 .CreateLogger();
+
+            Log.Information("Running in environment: {Environment}", builder.Environment.EnvironmentName);
 
             builder.Host.UseSerilog();
             Log.Information("Serilog successfully configured.");

@@ -8,6 +8,7 @@ using RabbitMQ.Client.Events;
 using Shared.Configurations;
 using Shared.Constants;
 using Shared.EventContracts;
+using System.Threading.Channels;
 
 namespace ChatApp.UserService.Infrastructure.Consumers
 {
@@ -28,12 +29,16 @@ namespace ChatApp.UserService.Infrastructure.Consumers
         {
             Task.Run(async () =>
             {
+                IModel? channel = null;
                 while (true)
                 {
                     try
                     {
                         _logger.LogInformation("Attempting to start UserDeletedConsumer...");
-                        using var channel = _rabbitConnection.GetConnection().CreateModel();
+
+                        channel?.Dispose();
+
+                        channel = _rabbitConnection.GetConnection().CreateModel();
 
                         if (channel == null || !channel.IsOpen)
                         {
@@ -42,7 +47,7 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                         }
 
                         // Declare queues safely
-                        _rabbitConnection.DeclareQueue(QueueNames.UserDeletedQueue, channel, withDeadLetter: false);
+                        _rabbitConnection.DeclareQueue(QueueNames.UserDeletedQueue, Exchanges.UserEventsExchange, RoutingKeys.UserDeleted, channel, withDeadLetter: false);
 
                         _logger.LogInformation("UserDeletedConsumer started listening on {QueueName}", QueueNames.UserDeletedQueue);
 
@@ -83,6 +88,8 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error starting UserDeletedConsumer. Retrying in 5 seconds...");
+                        channel?.Dispose();
+                        channel = null;
                         await Task.Delay(5000); // Retry after 5 seconds
                     }
                 }

@@ -8,7 +8,6 @@ using Shared.Models.User;
 using ChatApp.ChatService.Core.RequestResponseModels.Message;
 using ChatApp.ChatService.Core.DTOs.Message;
 using ChatApp.ChatService.Core.RequestResponseModels.Chat;
-using System.Threading.Tasks;
 using ChatApp.ChatService.Core.Enums.Message;
 
 namespace ChatApp.ChatService.API.Hubs
@@ -20,14 +19,17 @@ namespace ChatApp.ChatService.API.Hubs
         //private readonly IRedisCacheService _redisCacheService; // NEW: Redis Service
         private readonly IUserApiClient _userApiClient; // Service for managing users in MongoDB
         private readonly ILogger<ChatHub> _logger;
+        private readonly IRedisCacheService _redisCacheService; // Injected
+
 
         private static readonly ConcurrentDictionary<string, ConnectedUser> ConnectedUsers = new(); // Store connected users
 
-        public ChatHub(IMessageService messageService, IUserApiClient userApiClient, ILogger<ChatHub> logger)
+        public ChatHub(IMessageService messageService, IUserApiClient userApiClient, ILogger<ChatHub> logger, IRedisCacheService redisCacheService)
         {
             _messageService = messageService;
             //_redisCacheService = redisCacheService; // Inject Redis Cache Service
             _userApiClient = userApiClient;
+            _redisCacheService = redisCacheService;
             _logger = logger;
             _logger.LogInformation("ChatHub initiated");
         }
@@ -36,7 +38,7 @@ namespace ChatApp.ChatService.API.Hubs
         private class ConnectedUser
         {
             required public string ConnectionId { get; set; }
-            required public string UserName { get; set; }
+            required public string Username { get; set; }
         }
 
         public override async Task OnConnectedAsync()
@@ -45,6 +47,7 @@ namespace ChatApp.ChatService.API.Hubs
 
             // Print the UserIdentifier
             _logger.LogInformation($"UserIdentifier: {Context.UserIdentifier}");
+
 
             // Print all claims if using authentication
             var claimsPrincipal = Context.User;
@@ -103,7 +106,7 @@ namespace ChatApp.ChatService.API.Hubs
                 var connectedUser = new ConnectedUser
                 {
                     ConnectionId = Context.ConnectionId,
-                    UserName = user.Username
+                    Username = user.Username
                 };
 
                 ConnectedUsers[username] = connectedUser;
@@ -112,12 +115,14 @@ namespace ChatApp.ChatService.API.Hubs
                 await Clients.AllExcept(Context.ConnectionId).SendAsync("UserConnected", connectedUser);
 
                 // ✅ Retry unsent messages for reconnected user
-                //var unsentMessages = await _redisCacheService.GetUnsentMessages(username);
-                //foreach (var message in unsentMessages)
-                //{
-                //    await Clients.Client(Context.ConnectionId).SendAsync("ReceiveMessage", message);
-                //}
-                
+                var unsentMessages = await _redisCacheService.GetUnsentMessagesAsync(username);
+                foreach (var message in unsentMessages)
+                {
+                    await Clients.Client(Context.ConnectionId).SendAsync("ReceiveMessage", message, "system-retry");
+                    await _redisCacheService.ClearUnsentMessagesAsync(username);
+                    _logger.LogInformation("📤 Retried message {MessageId} for {Username}", message.MessageId, username);
+                }
+
             }
 
             await base.OnConnectedAsync();
@@ -135,93 +140,133 @@ namespace ChatApp.ChatService.API.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(SendMessageDto sendMessageDto)
+        /*
+        
+            1. Client A -> Server - Done
+            2. Server save to mongodb - Done
+            2.1 Broadcast to client B - Done
+            3. Server notify Client A with sent status - Done
+            4. Client B upon successfully received ack server with (delivered status)
+            5. Server update status to mongodb
+            6. Server notifies Client A with the status
+            7. Client B open/focus the message sends (seen/read) status to server
+            8. Server update status to mongodb
+            9. Server notify Client A with read status
+
+         */
+
+        // 1️⃣ Client A triggers this to send a message
+        public async Task SendMessage(SendMessageDto sendMessageDto, string clientId)
         {
-            _logger.LogInformation($"SendMessage called with: {JsonSerializer.Serialize(sendMessageDto)}");
+            _logger.LogInformation("📨 SendMessage called: {Payload}", JsonSerializer.Serialize(sendMessageDto));
 
             try
             {
-                //if (await _redisCacheService.IsRateLimited(messageDto.From, 10, TimeSpan.FromSeconds(10)))
-                //{
-                //    await Clients.Caller.SendAsync("Error", "Rate limit exceeded. Please wait before sending more messages.");
-                //    _logger.LogInformation("Rate limit exceeded!");
-                //    return;
-                //}
+                var savedMessage = await _messageService.SendMessageAsync(sendMessageDto);
 
-                _logger.LogInformation("SendMessage in ChatHub");
+                if (!savedMessage.Success || savedMessage.Data == null)
+                    throw new Exception(savedMessage.Message ?? "Failed to save message");
 
-                ServiceResponse<MessageDto> response = await _messageService.SendMessageAsync(sendMessageDto);
+                MessageDto message = savedMessage.Data;
 
-                if(!response.Success)
+                // 2️⃣ Deliver to recipient if online
+                if (ConnectedUsers.TryGetValue(message.To, out var recipient))
                 {
-                    _logger.LogInformation("Something went wrong when sendmessageasync chathub");
-                    throw new Exception(response.Message);
-                }
-
-                MessageDto messageDto = response.Data;
-
-                if(messageDto == null)
-                {
-                    _logger.LogInformation("MessageDto got null");
-                    throw new Exception("Something went wrong");
-                }
-                
-                _logger.LogInformation("Message saved in mongodb");
-
-                _logger.LogInformation($"Checking if recipient {messageDto.To} is connected");
-                foreach (var kvp in ConnectedUsers)
-                {
-                    _logger.LogInformation($"Connected: {kvp.Key} => {kvp.Value.ConnectionId}");
-                }
-
-                _logger.LogInformation($"messageDto.To = {messageDto.To}, Keys in ConnectedUsers: {string.Join(", ", ConnectedUsers.Keys)}");
-
-                // Check if the recipient is online
-                if (ConnectedUsers.TryGetValue(messageDto.To, out var recipient))
-                {
-                    // Deliver the message in real time
-                    await Clients.Client(recipient.ConnectionId).SendAsync("ReceiveMessage", messageDto);
-                    _logger.LogInformation("Message delivered ReceiveMessage");
-
-                    // Mark the message as delivered
-                    await _messageService.UpdateMessageStatusAsync(messageDto.MessageId, MessageStatus.Delivered);
-                    messageDto.MessageStatus = "Delivered";
-                    _logger.LogInformation("Updated status to delivered");
+                    await Clients.Client(recipient.ConnectionId).SendAsync("ReceiveMessage", message, clientId);
+                    _logger.LogInformation("📤 Delivered to {Recipient}", message.To);
                 }
                 else
                 {
-                    // ✅ Cache unsent message in Redis
-                    //await _redisCacheService.SaveUnsentMessage(message.ReceiverUsername, JsonSerializer.Serialize(messageDto));
+                    _logger.LogInformation("🕳️ Recipient {Recipient} not online.", message.To);
+                    // Optionally queue or cache for retry
+                    await _redisCacheService.AddUnsentMessageAsync(message.To, message);
+
                 }
 
-                // Notify the sender about the message status
-                await Clients.Caller.SendAsync("MessageStatusUpdated", messageDto);
-                _logger.LogInformation("Notify the status");
+                // ✅ Respond to Client A with "Sent" status (DO NOT say Delivered)
+                message.MessageStatus = MessageStatus.Sent.ToString();
+                await Clients.Caller.SendAsync("MessageStatusUpdated", message, clientId);
+
+                _logger.LogInformation("✅ Client A notified with Sent status");
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"Failed to send message. {ex}");
-                await Clients.Caller.SendAsync("Error", $"Failed to send message. {ex}");
+                _logger.LogError(ex, "❌ Error in SendMessage");
+                await Clients.Caller.SendAsync("Error", $"Failed to send message. {ex.Message}");
             }
         }
 
-        public async Task MarkMessageAsRead(ChangeMessageStatus Message)
+        // 3️⃣ Client B explicitly triggers this after receiving message
+        public async Task MarkMessageAsDelivered(ChangeMessageStatus request)
         {
-            _logger.LogInformation($"MarkMessageAsRead called with: {Message.MessageId}");
+            _logger.LogInformation("📦 MarkMessageAsDelivered called for: {MessageId}", request.MessageId);
+
             try
             {
-                ServiceResponse<MessageDto> response = await _messageService.UpdateMessageStatusAsync(Message.MessageId, MessageStatus.Seen);
-                // Send status update to the sender and recipient
-                await Clients.User(response.Data.From).SendAsync("MessageStatusUpdated", response.Data);
-                //await Clients.User(Message.To).SendAsync("MessageStatusUpdated", Message);
-                await Clients.Caller.SendAsync("MessageStatusUpdated", response.Data);
+                var result = await _messageService.UpdateMessageStatusAsync(request.MessageId, MessageStatus.Delivered);
+
+                if (!result.Success || result.Data == null)
+                    throw new Exception(result.Message ?? "Status update failed");
+
+                var message = result.Data;
+
+                // Notify Client A (sender)
+                await Clients.User(message.From).SendAsync("MessageStatusUpdated", message);
+                await Clients.User(message.To).SendAsync("MessageStatusUpdated", message);
+
+                _logger.LogInformation("📬 Delivered status sent to Client A: {MessageId}", message.MessageId);
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"Failed to mark message as read. {ex}");
-                await Clients.Caller.SendAsync("Error", $"Failed to mark message as read. {ex}");
-
+                _logger.LogError(ex, "❌ Failed to update delivery status");
+                await Clients.Caller.SendAsync("Error", $"Failed to mark as delivered. {ex.Message}");
             }
         }
+
+        // 4️⃣ Client B triggers this after reading the message
+        public async Task MarkMessageAsRead(ChangeMessageStatus request)
+        {
+            _logger.LogInformation("👁️ MarkMessageAsRead called for: {MessageId}", request.MessageId);
+
+            try
+            {
+                var result = await _messageService.UpdateMessageStatusAsync(request.MessageId, MessageStatus.Seen);
+
+                if (!result.Success || result.Data == null)
+                    throw new Exception(result.Message ?? "Status update failed");
+
+                var message = result.Data;
+
+                // Notify Client A (sender)
+                await Clients.User(message.From).SendAsync("MessageStatusUpdated", message);
+                await Clients.User(message.To).SendAsync("MessageStatusUpdated", message);
+
+                _logger.LogInformation("👀 Seen status sent to Client A: {MessageId}", message.MessageId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Failed to update seen status");
+                await Clients.Caller.SendAsync("Error", $"Failed to mark as read. {ex.Message}");
+            }
+        }
+
+        //public async Task MarkMessageAsRead(ChangeMessageStatus Message)
+        //{
+        //    _logger.LogInformation($"MarkMessageAsRead called with: {Message.MessageId}");
+        //    try
+        //    {
+        //        ServiceResponse<MessageDto> response = await _messageService.UpdateMessageStatusAsync(Message.MessageId, MessageStatus.Seen);
+        //        // Send status update to the sender and recipient
+        //        await Clients.User(response.Data.From).SendAsync("MessageStatusUpdated", response.Data);
+        //        //await Clients.User(Message.To).SendAsync("MessageStatusUpdated", Message);
+        //        await Clients.Caller.SendAsync("MessageStatusUpdated", response.Data);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogInformation($"Failed to mark message as read. {ex}");
+        //        await Clients.Caller.SendAsync("Error", $"Failed to mark message as read. {ex}");
+
+        //    }
+        //}
     }
 }

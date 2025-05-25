@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ChatApp.UserService.Core.Interfaces;
 using Microsoft.Extensions.Hosting;
+using ChatApp.UserService.Infrastructure.Consumers;
 
 namespace ChatApp.UserService.Infrastructure.BackgroundServices
 {
@@ -18,7 +19,7 @@ namespace ChatApp.UserService.Infrastructure.BackgroundServices
             Console.WriteLine("UsernameChangedConsumerService is running.");
             using (var scope = _serviceProvider.CreateScope())
             {
-                var _consumer = scope.ServiceProvider.GetRequiredService<IConsumer>();
+                var _consumer = scope.ServiceProvider.GetRequiredService<UsernameChangedConsumer>();
                 _consumer.StartConsuming();
             }
             return Task.CompletedTask;

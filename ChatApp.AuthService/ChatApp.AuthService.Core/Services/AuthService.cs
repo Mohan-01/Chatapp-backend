@@ -10,6 +10,7 @@ using MongoDB.Driver;
 using Shared.Constants;
 using Shared.Enums.User;
 using Shared.EventContracts;
+using Shared.Producers;
 
 namespace ChatApp.AuthService.Core.Services
 {
@@ -60,7 +61,7 @@ namespace ChatApp.AuthService.Core.Services
             };
 
             await _authRepository.CreateUserAsync(user);
-            _publisher.Publish(QueueNames.UserRegisteredQueue, new UserRegisteredEvent
+            _publisher.Publish(Exchanges.UserEventsExchange, RoutingKeys.UserRegistered, new UserRegisteredEvent
             {
                 UserId = user.UserId?.ToString() ?? "",
                 Username = user.Username,
@@ -68,7 +69,7 @@ namespace ChatApp.AuthService.Core.Services
                 Roles = [user.Roles.ToString()],
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt
-            }, false);
+            });
 
             _logger.LogInformation("User {Username} registered successfully", user.Username);
 
@@ -191,7 +192,7 @@ namespace ChatApp.AuthService.Core.Services
                     NewUsername = newUsername
                 };
 
-                _publisher.Publish(QueueNames.UsernameChangedQueue, usernameChangedEvent, false);
+                _publisher.Publish(Exchanges.UserEventsExchange, RoutingKeys.UserUsernameChanged, usernameChangedEvent);
                 _logger.LogInformation("Username changed successfully: {CurrentUsername} -> {NewUsername}", username, newUsername);
 
                 // ✅ Send username change confirmation email
@@ -239,7 +240,7 @@ namespace ChatApp.AuthService.Core.Services
 
             if (await _authRepository.UpdateEmailAsync(emailChangedEvent))
             {
-                _publisher.Publish(QueueNames.EmailChangedQueue, emailChangedEvent, false);
+                _publisher.Publish(Exchanges.UserEventsExchange, RoutingKeys.UserEmailChanged, emailChangedEvent);
 
                 if(email == null)
                 {
@@ -328,7 +329,7 @@ namespace ChatApp.AuthService.Core.Services
             bool isUpdated = await _authRepository.UpdateIsActiveStatusAsync(userDeletedEvent);
             if (isUpdated)
             {
-                _publisher.Publish(QueueNames.UserDeletedQueue, userDeletedEvent, false);
+                _publisher.Publish(Exchanges.UserEventsExchange, RoutingKeys.UserDeleted, userDeletedEvent);
                 _logger.LogInformation("User {Username} marked as inactive successfully", userDeletedEvent.Username);
 
                 // ✅ Send account deactivation email

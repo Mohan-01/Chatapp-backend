@@ -63,6 +63,8 @@ namespace ChatApp.UserService.API
                                  collectionName: "UserServiceLogs")
                 .CreateLogger();
 
+            Log.Information("Running in environment: {Environment}", builder.Environment.EnvironmentName);
+
             builder.Host.UseSerilog();
         }
 
@@ -172,17 +174,21 @@ namespace ChatApp.UserService.API
 
         private static void ConfigureEventConsumers(IServiceCollection services)
         {
-            services.AddSingleton<IConsumer, UserRegisteredConsumer>();
+            services.AddSingleton<UserRegisteredConsumer>();
             services.AddHostedService<UserRegisteredConsumerService>();
 
-            services.AddSingleton<IConsumer, UsernameChangedConsumer>();
+            services.AddSingleton<UserRegisteredDlqConsumer>();
+            services.AddHostedService<UserRegisteredDqlConsumerService>();
+
+            services.AddSingleton<UsernameChangedConsumer>();
             services.AddHostedService<UsernameChangedConsumerService>();
 
-            services.AddSingleton<IConsumer, UserDeletedConsumer>();
+            services.AddSingleton<UserDeletedConsumer>();
             services.AddHostedService<UserDeletedConsumerService>();
 
-            services.AddSingleton<IConsumer, EmailChangedConsumer>();
+            services.AddSingleton<EmailChangedConsumer>();
             services.AddHostedService<EmailChangedConsumerService>();
+
         }
 
         private static void ConfigureServices(IServiceCollection services)

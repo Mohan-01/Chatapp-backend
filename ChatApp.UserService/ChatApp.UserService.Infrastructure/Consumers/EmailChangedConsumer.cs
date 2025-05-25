@@ -28,12 +28,16 @@ namespace ChatApp.UserService.Infrastructure.Consumers
         {
             Task.Run(async () =>
             {
+                IModel? channel = null;
+
                 while (true)
                 {
                     try
                     {
                         _logger.LogInformation("Attempting to start EmailChangedConsumer...");
-                        using var channel = _rabbitConnection.GetConnection().CreateModel();
+                        channel?.Dispose();
+
+                        channel = _rabbitConnection.GetConnection().CreateModel();
 
                         if (channel == null || !channel.IsOpen)
                         {
@@ -42,7 +46,7 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                         }
 
                         // Declare queues safely
-                        _rabbitConnection.DeclareQueue(QueueNames.EmailChangedQueue, channel, withDeadLetter: false);
+                        _rabbitConnection.DeclareQueue(QueueNames.EmailChangedQueue, Exchanges.UserEventsExchange, RoutingKeys.UserEmailChanged, channel, withDeadLetter: false);
 
                         _logger.LogInformation("EmailChangedConsumer started listening on {QueueName}", QueueNames.EmailChangedQueue);
 
@@ -50,7 +54,7 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                         consumer.Received += async (model, ea) =>
                         {
                             using var scope = _serviceProvider.CreateScope();
-                            var _profileService = scope.ServiceProvider.GetRequiredService<IUserEventsService>();
+                            var _userEvnetService = scope.ServiceProvider.GetRequiredService<IUserEventsService>();
 
                             try
                             {
@@ -63,7 +67,7 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                                     throw new Exception("Invalid EmailChanged event received. Event is null.");
                                 }
 
-                                await _profileService.ChangeEmailAsync(@event);
+                                await _userEvnetService.ChangeEmailAsync(@event);
                                 channel.BasicAck(ea.DeliveryTag, false);
                             }
                             catch (Exception ex)
@@ -83,6 +87,8 @@ namespace ChatApp.UserService.Infrastructure.Consumers
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error starting EmailChangedConsumer. Retrying in 5 seconds...");
+                        channel?.Dispose();
+                        channel = null;
                         await Task.Delay(5000); // Retry after 5 seconds
                     }
                 }

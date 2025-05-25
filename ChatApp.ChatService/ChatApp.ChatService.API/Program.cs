@@ -18,6 +18,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System;
+using Microsoft.AspNetCore.SignalR;
+using ChatApp.ChatService.Infrastructure.SignalR;
+using ChatApp.ChatService.Core.Services;
+using StackExchange.Redis;
 
 namespace ChatApp.ChatService.API
 {
@@ -34,7 +38,7 @@ namespace ChatApp.ChatService.API
             ConfigureAuthentication(builder);
             ConfigureAuthorization(builder);
             ConfigureCors(builder.Services);
-            ConfigureServices(builder.Services);
+            ConfigureServices(builder.Services, builder.Configuration);
             ConfigureSwagger(builder.Services);
 
             builder.Logging.ClearProviders();
@@ -196,28 +200,65 @@ namespace ChatApp.ChatService.API
             services.AddHttpClient(); // <-- This line is key
         }
 
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ConfigureSignalR(IServiceCollection services)
         {
             services.AddSignalR(options =>
             {
                 options.EnableDetailedErrors = true;
-            }).AddJsonProtocol(options =>
+            })
+            .AddJsonProtocol(options =>
             {
-                options.PayloadSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             });
-            services.AddHttpContextAccessor();
-            services.AddAutoMapper(typeof(MappingProfile));
-            
-            services.AddSingleton<IChatRepository, ChatRepository>();
-            services.AddScoped<IChatService, Core.Services.ChatService>();
 
-            services.AddSingleton<IMessageRepository, MessageRepository>();
-            services.AddScoped<IMessageService, MessageService>();
+            services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+        }
 
-            services.AddScoped<IEventPublisher, EventPublisher>();
+        private static void ConfigureRedis(IServiceCollection services, IConfiguration configuration)
+        {
+            var host = configuration["Redis:Host"];
+            var port = configuration["Redis:Port"];
+            var abort = configuration["Redis:AbortOnConnectFail"] ?? "false";
 
+            var connectionString = $"{host}:{port},abortConnect={abort}";
+
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
+            services.AddScoped<IRedisCacheService, RedisCacheService>();
+        }
+
+        private static void ConfigureClients(IServiceCollection services)
+        {
             services.AddSingleton<IUserApiClient, UserApiClient>();
             services.AddSingleton<IChatApiClient, ChatApiClient>();
+        }
+
+        private static void ConfigureRepositories(IServiceCollection services)
+        {
+            services.AddSingleton<IChatRepository, ChatRepository>();
+            services.AddSingleton<IMessageRepository, MessageRepository>();
+        }
+
+        private static void ConfigureServicesLayer(IServiceCollection services)
+        {
+            services.AddScoped<IChatService, Core.Services.ChatService>();
+            services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IEventPublisher, EventPublisher>();
+        }
+
+        private static void ConfigureUtilities(IServiceCollection services)
+        {
+            services.AddHttpContextAccessor();
+            services.AddAutoMapper(typeof(MappingProfile));
+        }
+
+        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+        {
+            ConfigureSignalR(services);
+            ConfigureRedis(services, configuration);
+            ConfigureClients(services);
+            ConfigureRepositories(services);
+            ConfigureServicesLayer(services);
+            ConfigureUtilities(services);
         }
 
         private static void ConfigureSwagger(IServiceCollection services)
