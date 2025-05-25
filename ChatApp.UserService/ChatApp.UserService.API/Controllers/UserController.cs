@@ -12,9 +12,11 @@ namespace ChatApp.UserService.API.Controllers
     public class UserController : Controller
     {
         private readonly IUserService _userService;
-        public UserController(IUserService userService)
+        private readonly ILogger<UserController> _logger;
+        public UserController(IUserService userService, ILogger<UserController> logger)
         {
             _userService = userService;
+            _logger = logger;
         }
 
         [HttpGet("check")]
@@ -29,10 +31,11 @@ namespace ChatApp.UserService.API.Controllers
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUserByUsername()
-        {
+            {
             string? username = User.Identity?.Name;
             if (string.IsNullOrEmpty(username))
             {
+                _logger.LogInformation($"Username not found");
                 return Unauthorized("Username not found in token.");
             }
 

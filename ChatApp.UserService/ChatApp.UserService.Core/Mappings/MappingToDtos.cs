@@ -15,7 +15,19 @@ namespace ChatApp.UserService.Core.Mappings
                 LastName = user.LastName,
                 Email = user.Email,
                 Phone = user.Phone,
-                Roles = user.Roles,
+                ProfilePicture = user.ProfilePicture,
+                Status = user.Status.ToString(),
+                LastSeen = user.LastSeen,
+            };
+        }
+
+        public static SearchUserDto MapUserToSearchUserDto(User2 user)
+        {
+            return new SearchUserDto
+            {
+                Username = user.Username,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
                 ProfilePicture = user.ProfilePicture,
                 Status = user.Status.ToString(),
                 LastSeen = user.LastSeen

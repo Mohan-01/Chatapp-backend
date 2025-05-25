@@ -1,5 +1,6 @@
 ﻿using ChatApp.ChatService.Core.Entities.Message;
 using ChatApp.ChatService.Core.Enums.Message;
+using MongoDB.Bson;
 
 namespace ChatApp.ChatService.Core.Interfaces
 {
@@ -9,13 +10,13 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task<Message> GetByIdAsync(string messageId);
 
         // Get all messages for a specific one-to-one chat
-        Task<IEnumerable<Message>> GetMessagesByChatIdAsync(string chatId);
+        Task<List<Message>> GetMessagesByChatIdAsync(ObjectId chatId);
 
         // Get all messages sent or received by a specific user
-        Task<IEnumerable<Message>> GetMessagesByUserIdAsync(string userId);
+        Task<List<Message>> GetMessagesByUserIdAsync(string userId);
 
         // Get all unread messages for a specific user
-        Task<IEnumerable<Message>> GetUnreadMessagesByUserIdAsync(string userId);
+        Task<List<Message>> GetUnreadMessagesByUserIdAsync(string userId);
 
         // Create and send a new message
         Task<Message> SendMessageAsync(Message message);
@@ -33,6 +34,6 @@ namespace ChatApp.ChatService.Core.Interfaces
         Task MarkChatMessagesAsReadAsync(string chatId, string userId);
 
         // Update the status of a message (e.g., Sent, Delivered, Seen)
-        Task UpdateMessageStatusAsync(string messageId, MessageStatus status);
+        Task<Message> UpdateMessageStatusAsync(string messageId, MessageStatus status);
     }
 }

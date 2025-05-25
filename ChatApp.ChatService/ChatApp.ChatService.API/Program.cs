@@ -5,11 +5,23 @@ using Serilog;
 using Serilog.Events;
 using Shared.Configurations;
 using ChatApp.ChatService.Core.Interfaces;
-using ChatApp.ChatService.Infrastructure.HttpClients;
 using ChatApp.ChatService.Infrastructure.Repositories;
 using ChatApp.ChatService.Infrastructure.Settings;
 using ChatService.Mappings;
 using Shared.Middlewares;
+using Shared.HttpClients.Interfaces;
+using Shared.HttpClients;
+using ChatApp.ChatService.API.Hubs;
+using ChatService.Services;
+using Shared.Producers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.SignalR;
+using ChatApp.ChatService.Infrastructure.SignalR;
+using ChatApp.ChatService.Core.Services;
+using StackExchange.Redis;
 
 namespace ChatApp.ChatService.API
 {
@@ -19,17 +31,20 @@ namespace ChatApp.ChatService.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            ConfigureEnvironment(builder);
             ConfigureSerilog(builder);
             ConfigureMongoDb(builder.Services, builder.Configuration);
             ConfigureRabbitMq(builder.Services, builder.Configuration);
-            //ConfigureAuthentication(builder);
+            ConfigureAuthentication(builder);
             ConfigureAuthorization(builder);
             ConfigureCors(builder.Services);
-            ConfigureServices(builder.Services);
+            ConfigureServices(builder.Services, builder.Configuration);
             ConfigureSwagger(builder.Services);
 
-            builder.Services.AddControllers();
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();  // or AddDebug() or other providers
 
+            builder.Services.AddControllers();
             var app = builder.Build();
             ConfigureMiddleware(app);
             app.Run();
@@ -48,7 +63,18 @@ namespace ChatApp.ChatService.API
                     collectionName: "ChatServiceLogs")
                 .CreateLogger();
 
+            Log.Information("Running in environment: {Environment}", builder.Environment.EnvironmentName);
+
             builder.Host.UseSerilog();
+        }
+
+        private static void ConfigureEnvironment(WebApplicationBuilder builder)
+        {
+            builder.Configuration
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
         }
 
         private static void ConfigureMongoDb(IServiceCollection services, IConfiguration configuration)
@@ -88,7 +114,7 @@ namespace ChatApp.ChatService.API
 
         }
 
-        /* private static void ConfigureAuthentication(WebApplicationBuilder builder)
+        private static void ConfigureAuthentication(WebApplicationBuilder builder)
          {
              var jwtKey = builder.Configuration["Jwt:Key"];
              var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -132,7 +158,7 @@ namespace ChatApp.ChatService.API
                          }
                      };
                  });
-         }*/
+         }
 
         private static void ConfigureAuthorization(WebApplicationBuilder builder)
         {
@@ -174,16 +200,66 @@ namespace ChatApp.ChatService.API
             services.AddHttpClient(); // <-- This line is key
         }
 
-        private static void ConfigureServices(IServiceCollection services)
+        private static void ConfigureSignalR(IServiceCollection services)
         {
-            services.AddAutoMapper(typeof(MappingProfile));
-            
-            services.AddSingleton<IChatRepository, ChatRepository>();
-            services.AddScoped<IChatService, Core.Services.ChatService>();
+            services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+            })
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            });
 
+            services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
+        }
+
+        private static void ConfigureRedis(IServiceCollection services, IConfiguration configuration)
+        {
+            var host = configuration["Redis:Host"];
+            var port = configuration["Redis:Port"];
+            var abort = configuration["Redis:AbortOnConnectFail"] ?? "false";
+
+            var connectionString = $"{host}:{port},abortConnect={abort}";
+            Log.Information("Redis configured with connection string: {ConnectionString}", connectionString);
+
+            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
+            services.AddScoped<IRedisCacheService, RedisCacheService>();
+        }
+
+        private static void ConfigureClients(IServiceCollection services)
+        {
             services.AddSingleton<IUserApiClient, UserApiClient>();
-            services.AddSingleton<IMessageApiClient, MessageApiClient>();
             services.AddSingleton<IChatApiClient, ChatApiClient>();
+        }
+
+        private static void ConfigureRepositories(IServiceCollection services)
+        {
+            services.AddSingleton<IChatRepository, ChatRepository>();
+            services.AddSingleton<IMessageRepository, MessageRepository>();
+        }
+
+        private static void ConfigureServicesLayer(IServiceCollection services)
+        {
+            services.AddScoped<IChatService, Core.Services.ChatService>();
+            services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IEventPublisher, EventPublisher>();
+        }
+
+        private static void ConfigureUtilities(IServiceCollection services)
+        {
+            services.AddHttpContextAccessor();
+            services.AddAutoMapper(typeof(MappingProfile));
+        }
+
+        private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+        {
+            ConfigureSignalR(services);
+            ConfigureRedis(services, configuration);
+            ConfigureClients(services);
+            ConfigureRepositories(services);
+            ConfigureServicesLayer(services);
+            ConfigureUtilities(services);
         }
 
         private static void ConfigureSwagger(IServiceCollection services)
@@ -223,9 +299,10 @@ namespace ChatApp.ChatService.API
             app.UseCors("AllowAllOrigins");
             app.UseSwagger();
             app.UseSwaggerUI();
-            //app.UseAuthentication();
+            app.UseAuthentication();
             app.UseMiddleware<AuthenticationMiddleware>();
             app.UseAuthorization();
+            app.MapHub<ChatHub>("/chathub");
             app.MapControllers();
         }
     }

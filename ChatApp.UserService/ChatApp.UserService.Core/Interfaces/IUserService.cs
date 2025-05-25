@@ -15,7 +15,7 @@ namespace ChatApp.UserService.Core.Interfaces
         //Task<ServiceResponse<string>> CreateUserAsync(User2 user);
         //Task<ServiceResponse<UserDto>> GetByEmailAsync(string email);
 
-        Task<ServiceResponse<List<UserDto>>> SearchUsersAsync(SearchUsersRequest dto);
+        Task<ServiceResponse<List<SearchUserDto>>> SearchUsersAsync(SearchUsersRequest dto);
         Task<ServiceResponse<List<UserDto>>> GetUsersBatchAsync(BatchUserRequest dto);
 
     }

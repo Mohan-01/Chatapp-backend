@@ -18,7 +18,7 @@ namespace ChatApp.UserService.Infrastructure.BackgroundServices
             Console.WriteLine("UserRegisteredConsumerService is running.");
             using (var scope = _serviceProvider.CreateScope())
             {
-                var consumer = scope.ServiceProvider.GetRequiredService<IUserRegisteredConsumer>();
+                var consumer = scope.ServiceProvider.GetRequiredService<UserRegisteredConsumer>();
                 consumer.StartConsuming();
                 await Task.CompletedTask;
             }

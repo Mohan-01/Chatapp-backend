@@ -1,93 +1,153 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using ChatApp.UserService.Core.Interfaces;
+﻿using ChatApp.UserService.Core.Interfaces;
 using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+using RabbitMQ.Client;
 using Shared.Configurations;
 using Shared.Constants;
-using Shared.EventContracts;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Text.Json;
+using Shared.EventContracts;
 
-namespace ChatApp.UserService.Infrastructure.Consumers
+public class UserRegisteredConsumer : IConsumer
 {
-    public class UserRegisteredConsumer: IUserRegisteredConsumer
+    private readonly IRabbitMQConnection _rabbitConnection;
+    private readonly ILogger<IConsumer> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private const int MaxRetryAttempts = 3;
+
+    public UserRegisteredConsumer(IRabbitMQConnection rabbitConnection, ILogger<IConsumer> logger, IServiceProvider serviceProvider)
     {
-        private readonly IRabbitMQConnection _rabbitConnection;
-        private readonly ILogger<IUserRegisteredConsumer> _logger;
-        private readonly IServiceProvider _serviceProvider;
+        _rabbitConnection = rabbitConnection;
+        _logger = logger;
+        _serviceProvider = serviceProvider;
+    }
 
-        public UserRegisteredConsumer(IRabbitMQConnection rabbitConnection, ILogger<IUserRegisteredConsumer> logger, IServiceProvider serviceProvider)
+    public void StartConsuming()
+    {
+        Task.Run(async () =>
         {
-            _rabbitConnection = rabbitConnection;
-            _logger = logger;
-            _serviceProvider = serviceProvider;
-        }
+            IModel? channel = null;
 
-        public void StartConsuming()
-        {
-            Task.Run(async () =>
+            while (true)
             {
-                while (true)
+                try
                 {
-                    try
+                    _logger.LogInformation("🔄 Starting UserRegisteredConsumer...");
+                    channel?.Dispose();
+                    channel = _rabbitConnection.GetConnection().CreateModel();
+
+                    _rabbitConnection.DeclareQueue(QueueNames.UserRegisteredQueue, Exchanges.UserEventsExchange, RoutingKeys.UserRegistered, channel, withDeadLetter: true);
+                    _logger.LogInformation("✅ Queue declared: {QueueName}", QueueNames.UserRegisteredQueue);
+
+                    var consumer = new AsyncEventingBasicConsumer(channel);
+                    consumer.Received += async (model, ea) =>
                     {
-                        _logger.LogInformation("Attempting to start UserRegisteredConsumer...");
-                        using var channel = _rabbitConnection.GetConnection().CreateModel();
+                        using var scope = _serviceProvider.CreateScope();
+                        var profileService = scope.ServiceProvider.GetRequiredService<IUserEventsService>();
 
-                        if (channel == null || !channel.IsOpen)
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        _logger.LogInformation("📩 Received message: {Message}", message);
+
+                        try
                         {
-                            _logger.LogError("RabbitMQ channel is not open. Attempting reconnection...");
-                            _rabbitConnection.Reconnect();
+                            var @event = JsonSerializer.Deserialize<UserRegisteredEvent>(message);
+                            if (@event == null)
+                                throw new InvalidDataException("❌ Deserialized event is null.");
+
+                            await profileService.CreateUserProfileAsync(@event);
+                            channel.BasicAck(ea.DeliveryTag, false);
+                            _logger.LogInformation("✅ User profile created. Message acknowledged.");
                         }
-
-                        // Declare queues safely
-                        _rabbitConnection.DeclareQueue(QueueNames.UserRegisteredQueue, channel, withDeadLetter: false);
-
-                        _logger.LogInformation("UserRegisteredConsumer started listening on {QueueName}", QueueNames.UserRegisteredQueue);
-
-                        var consumer = new AsyncEventingBasicConsumer(channel);
-                        consumer.Received += async (model, ea) =>
+                        catch (InvalidDataException ex)
                         {
-                            using var scope = _serviceProvider.CreateScope();
-                            var _profileService = scope.ServiceProvider.GetRequiredService<IUserEventsService>();
+                            _logger.LogError(ex, "❌ Invalid data. Routing to DLQ.");
+                            channel.BasicNack(ea.DeliveryTag, false, false);
+                        }
+                        catch (Exception ex)
+                        {
+                            int retryCount = GetRetryCount(ea.BasicProperties);
 
-                            try
+                            if (retryCount >= MaxRetryAttempts)
                             {
-                                var body = ea.Body.ToArray();
-                                var message = Encoding.UTF8.GetString(body);
-                                var @event = JsonSerializer.Deserialize<UserRegisteredEvent>(message);
-
-                                if (@event == null)
-                                {
-                                    throw new Exception("Invalid UserRegistered event received. Event is null.");
-                                }
-
-                                await _profileService.CreateUserProfileAsync(@event);
-                                channel.BasicAck(ea.DeliveryTag, false);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Error processing UserRegistered event. Sending to DLQ.");
+                                _logger.LogWarning("🚫 Retry limit reached ({RetryCount}). Sending to DLQ.", retryCount);
                                 channel.BasicNack(ea.DeliveryTag, false, false);
                             }
-                        };
+                            else
+                            {
+                                var delayMs = (int)Math.Pow(2, retryCount) * 1000;
+                                _logger.LogWarning("⏱️ Transient error. Retrying in {DelayMs}ms (Attempt {RetryCount})", delayMs, retryCount + 1);
 
-                        channel.BasicConsume(QueueNames.UserRegisteredQueue, false, consumer);
+                                PublishToRetryQueue(channel, ea.Body.ToArray(), ea.BasicProperties, delayMs);
+                                channel.BasicAck(ea.DeliveryTag, false);
+                            }
 
-                        _logger.LogInformation("Consumer is now actively listening on {QueueName}", QueueNames.UserRegisteredQueue);
+                            _logger.LogError(ex, "⚠️ Error processing message.");
+                        }
+                    };
 
-                        // Keep the consumer running
-                        await Task.Delay(Timeout.Infinite);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error starting UserRegisteredConsumer. Retrying in 5 seconds...");
-                        await Task.Delay(5000); // Retry after 5 seconds
-                    }
+                    channel.BasicConsume(queue: QueueNames.UserRegisteredQueue, autoAck: false, consumer: consumer);
+                    _logger.LogInformation("Consumer is now actively listening on {QueueName}", QueueNames.UserRegisteredQueue);
+
+                    await Task.Delay(Timeout.Infinite);
                 }
-            });
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "💥 Consumer startup failed. Retrying...");
+                    channel?.Dispose();
+                    channel = null;
+                    await Task.Delay(5000);
+                }
+            }
+        });
+    }
+
+    private int GetRetryCount(IBasicProperties props)
+    {
+        if (props.Headers != null && props.Headers.TryGetValue("x-death", out var xDeathObj))
+        {
+            var xDeath = xDeathObj as List<object>;
+            if (xDeath != null && xDeath.Count > 0)
+            {
+                var deathDict = xDeath[0] as Dictionary<string, object>;
+                if (deathDict != null && deathDict.TryGetValue("count", out var countObj))
+                {
+                    return Convert.ToInt32(countObj);
+                }
+            }
         }
 
+        return 0;
+    }
+
+    private void PublishToRetryQueue(IModel channel, byte[] messageBody, IBasicProperties originalProps, int delayMs)
+    {
+        var retryQueue = $"{QueueNames.UserRegisteredQueue}.retry.{delayMs}";
+
+        var args = new Dictionary<string, object>
+        {
+            { "x-dead-letter-exchange", "" },
+            { "x-dead-letter-routing-key", QueueNames.UserRegisteredQueue },
+            { "x-message-ttl", delayMs }
+        };
+
+        channel.QueueDeclare(retryQueue, durable: true, exclusive: false, autoDelete: true, arguments: args);
+
+        var props = channel.CreateBasicProperties();
+        props.Persistent = true;
+
+        // Copy headers
+        if (originalProps.Headers != null)
+            props.Headers = new Dictionary<string, object>(originalProps.Headers);
+
+        channel.BasicPublish(
+            exchange: "",
+            routingKey: retryQueue,
+            basicProperties: props,
+            body: messageBody
+        );
+
+        _logger.LogInformation("📤 Message published to retry queue: {RetryQueue} with {DelayMs}ms delay", retryQueue, delayMs);
     }
 }

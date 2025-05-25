@@ -89,7 +89,7 @@ Authorization: Bearer {your_token}
 
 ```bash
 # Build and run all microservices
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 > ℹ️ Make sure RabbitMQ and MongoDB containers are started

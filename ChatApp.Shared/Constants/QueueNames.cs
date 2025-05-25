@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Shared.Constants
+﻿namespace Shared.Constants
 {
     public static class QueueNames
     {
@@ -13,10 +7,14 @@ namespace Shared.Constants
         public const string UsernameChangedQueue = "user.usernamechanged.queue";
         public const string EmailChangedQueue = "user.emailchanged.queue";
 
+        public const string SendMessageQueue = "chat.message.sent";
+
         // Dead Letter Queues (DLQ)
-        public const string UserRegisteredDLQ = "user.registered.queue.dlq";
-        public const string UserDeletedDLQ = "user.deleted.queue.dlq";
-        public const string UsernameChangedDLQ = "user.usernamechanged.queue.dlq";
-        public const string EmailChangedDLQ = "user.emailchanged.queue.dlq";
+        public const string UserRegisteredDlqQueue = "user.registered.queue.dlq";
+        public const string UserDeletedDlqQueue = "user.deleted.queue.dlq";
+        public const string UsernameChangedDlqQueue = "user.usernamechanged.queue.dlq";
+        public const string EmailChangedDlqQueue = "user.emailchanged.queue.dlq";
+
+        public const string SendMessageDlqQueue = "chat.message.sent.dlq";
     }
 }

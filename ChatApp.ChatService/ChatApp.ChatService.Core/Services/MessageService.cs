@@ -7,6 +7,9 @@ using ChatApp.ChatService.Core.RequestResponseModels.Chat;
 using ChatApp.ChatService.Core.RequestResponseModels.Message;
 using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
+using Shared.Constants;
+using Shared.EventContracts;
+using Shared.Producers;
 
 namespace ChatService.Services
 {
@@ -14,11 +17,13 @@ namespace ChatService.Services
     {
         private readonly IMessageRepository _messageRepository;
         private readonly ILogger<IMessageService> _logger;
+        private readonly IEventPublisher _eventPublisher;
 
-        public MessageService(IMessageRepository messageRepository, ILogger<IMessageService> logger)
+        public MessageService(IMessageRepository messageRepository, ILogger<IMessageService> logger, IEventPublisher eventPublisher)
         {
             _messageRepository = messageRepository;
             _logger = logger;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<Message> GetByIdAsync(string messageId)
@@ -26,17 +31,54 @@ namespace ChatService.Services
             return await _messageRepository.GetByIdAsync(messageId);
         }
 
-        public async Task<IEnumerable<Message>> GetMessagesByChatIdAsync(string chatId)
+        public async Task<ServiceResponse<List<MessageDto>>> GetMessagesByChatIdAsync(string chatId)
         {
-            return await _messageRepository.GetMessagesByChatIdAsync(chatId);
+            try
+            {
+                if (string.IsNullOrEmpty(chatId))
+                {
+                    return new ServiceResponse<List<MessageDto>>
+                    {
+                        Success = false,
+                        Message = "Chat ID cannot be null or empty."
+                    };
+                }
+
+                if (!ObjectId.TryParse(chatId, out var chatObjectId))
+                {
+                    return new ServiceResponse<List<MessageDto>>
+                    {
+                        Success = false,
+                        Message = "Invalid Chat ID format."
+                    };
+                }
+
+                var messages = await _messageRepository.GetMessagesByChatIdAsync(chatObjectId);
+
+                return new ServiceResponse<List<MessageDto>>
+                {
+                    Success = true,
+                    Message = "Messages retrieved successfully.",
+                    Data = MappingToDtos.MapListOfMessagesToDto(messages)
+                };
+            }
+            catch (Exception ex)
+            {
+                // Optional: log exception here
+                return new ServiceResponse<List<MessageDto>>
+                {
+                    Success = false,
+                    Message = $"An error occurred while retrieving messages. {ex}"
+                };
+            }
         }
 
-        public async Task<IEnumerable<Message>> GetMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetMessagesByUserIdAsync(string userId)
         {
             return await _messageRepository.GetMessagesByUserIdAsync(userId);
         }
 
-        public async Task<IEnumerable<Message>> GetUnreadMessagesByUserIdAsync(string userId)
+        public async Task<List<Message>> GetUnreadMessagesByUserIdAsync(string userId)
         {
             return await _messageRepository.GetUnreadMessagesByUserIdAsync(userId);
         }
@@ -59,13 +101,20 @@ namespace ChatService.Services
                 // Log the message creation and sending process
                 _logger.LogInformation("Attempting to send message {MessageId} for chat {ChatId}.", message.MessageId, message.ChatId);
 
-                // Send the message to the repository
-                Message createdMessage = await _messageRepository.SendMessageAsync(message);
-                MappingToDtos.MapMessageToDto(createdMessage);
+                //// Send the message to the repository
+                //Message createdMessage = await _messageRepository.SendMessageAsync(message);
+                //MappingToDtos.MapMessageToDto(createdMessage);
 
                 //OR
                 await _messageRepository.SendMessageAsync(message);
                 MessageDto data = MappingToDtos.MapMessageToDto(message);
+
+                _eventPublisher.Publish(Exchanges.ChatMessageExchange, RoutingKeys.ChatMessageSent, new MessageSentEvent
+                {
+                    MessageId = message.MessageId.ToString(),
+                    ChatId = message.ChatId.ToString()
+                });
+
                 return new ServiceResponse<MessageDto>
                 {
                     Success = true,
@@ -80,6 +129,10 @@ namespace ChatService.Services
             }
         }
 
+        public async Task MessageSendEventAsync(MessageSentEvent messageSentEvent)
+        {
+
+        }
 
         public async Task UpdateMessageAsync(Message message)
         {
@@ -101,17 +154,44 @@ namespace ChatService.Services
             await _messageRepository.MarkChatMessagesAsReadAsync(chatId, userId);
         }
 
-        public async Task UpdateMessageStatusAsync(string messageId, string status)
+        public async Task<ServiceResponse<MessageDto>> UpdateMessageStatusAsync(string messageId, MessageStatus status)
         {
-            if (Enum.TryParse<MessageStatus>(status, out var parsedStatus))
+            try
             {
-                await _messageRepository.UpdateMessageStatusAsync(messageId, parsedStatus);
+                Message? updatedMessage = await _messageRepository.UpdateMessageStatusAsync(messageId, status);
+
+                if (updatedMessage == null)
+                {
+                    return new ServiceResponse<MessageDto>
+                    {
+                        Success = false,
+                        Message = "Message not found.",
+                        Data = null
+                    };
+                }
+
+                MessageDto messageDto = MappingToDtos.MapMessageToDto(updatedMessage); // <-- Assuming this method exists
+
+                return new ServiceResponse<MessageDto>
+                {
+                    Success = true,
+                    Message = "Message status updated successfully.",
+                    Data = messageDto
+                };
             }
-            else
+            catch (Exception ex)
             {
-                throw new ArgumentException($"Invalid message status: {status}", nameof(status));
+                // Log exception if needed
+
+                return new ServiceResponse<MessageDto>
+                {
+                    Success = false,
+                    Message = $"An error occurred while updating message status: {ex.Message}",
+                    Data = null
+                };
             }
         }
+
 
     }
 }

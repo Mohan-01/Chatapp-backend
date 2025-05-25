@@ -11,6 +11,6 @@ namespace ChatApp.ChatService.Core.DTOs.Chat
         public List<MessageDto> Messages { get; set; } = [];  // Messages in chat
         required public DateTime CreatedAt { get; set; }
         public DateTime? LastMessageTime { get; set; }
-        required public ChatStatus ChatStatus { get; set; }
+        required public string ChatStatus { get; set; }
     }
 }

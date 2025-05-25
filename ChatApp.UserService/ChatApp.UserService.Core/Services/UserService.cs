@@ -5,7 +5,6 @@ using ChatApp.UserService.Core.ResponseDTOs;
 using Microsoft.Extensions.Logging;
 using Shared.Models.User;
 using ChatApp.UserService.Core.RequestDTOs;
-using ChatApp.UserService.Core.Extensions;
 
 namespace ChatApp.UserService.Core.Services
 {
@@ -13,25 +12,29 @@ namespace ChatApp.UserService.Core.Services
     {
         private readonly IUserRepository _userRepository;
         private readonly ILogger<IUserService> _logger;
+        
 
         public UserService(IUserRepository userRepository, ILogger<IUserService> logger)
         {
             _userRepository = userRepository;
             _logger = logger;
         }
-        
+
         #region Get User
         public async Task<ServiceResponse<UserDto>> GetByUsernameAsync(string username)
         {
-            User2 user = await _userRepository.GetByUsernameAsync(username);
-            
+            var user = await _userRepository.GetByUsernameAsync(username);
+
             if (user == null)
             {
                 return new ServiceResponse<UserDto>(false, "User not found", null);
             }
 
-            return new ServiceResponse<UserDto>(true, "User found", MappingToDtos.MapUserToDto(user));
+            var userDto = MappingToDtos.MapUserToDto(user);
+
+            return new ServiceResponse<UserDto>(true, "User found", userDto);
         }
+
         /*
         public async Task<ServiceResponse<UserDto>> GetByEmailAsync(string email)
         {
@@ -45,9 +48,9 @@ namespace ChatApp.UserService.Core.Services
             return new ServiceResponse<UserDto>(true, "User found", MappingToDtos.MapUserToDto(user));
         }
         */
-        
+
         #endregion
-        
+
         /*
         public async Task<ServiceResponse<string>> CreateUserAsync(User2 user)
         {
@@ -73,7 +76,7 @@ namespace ChatApp.UserService.Core.Services
             }
         }
         */
-        
+
         public async Task<ServiceResponse<UserDto>> UpdateUserAsync(string username, UpdateUserRequest updateUserRequest)
         {
             ServiceResponse<UserDto> user = await GetByUsernameAsync(username);
@@ -95,21 +98,21 @@ namespace ChatApp.UserService.Core.Services
             return new ServiceResponse<UserDto>(true, "User updated successfully", MappingToDtos.MapUserToDto(updatedUser));
         }
         
-        public async Task<ServiceResponse<List<UserDto>>> SearchUsersAsync(SearchUsersRequest dto)
+        public async Task<ServiceResponse<List<SearchUserDto>>> SearchUsersAsync(SearchUsersRequest dto)
         {
             List<User2>? users = await _userRepository.SearchUsersAsync(dto.SearchTerm);
 
             if (users == null || users.Count == 0)
             {
                 _logger.LogInformation("No users found for search term: {SearchTerm}", dto.SearchTerm);
-                return new ServiceResponse<List<UserDto>>(false, "No users found", null);
+                return new ServiceResponse<List<SearchUserDto>>(false, "No users found", null);
             }
 
-            List<UserDto> resultedUsers = [..users.Select(user => MappingToDtos.MapUserToDto(user))];
+            List<SearchUserDto> resultedUsers = [..users.Select(user => MappingToDtos.MapUserToSearchUserDto(user))];
 
             _logger.LogInformation("Returning {Count} users from service", resultedUsers.Count);
 
-            return new ServiceResponse<List<UserDto>>(true, "Users found", resultedUsers);
+            return new ServiceResponse<List<SearchUserDto>>(true, "Users found", resultedUsers);
         }
 
         public async Task<ServiceResponse<List<UserDto>>> GetUsersBatchAsync(BatchUserRequest dto)

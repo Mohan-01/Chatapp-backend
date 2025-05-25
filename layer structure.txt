@@ -1,0 +1,81 @@
+|   .gitignore
+|   folder-structure.txt
+|   README.md
+|   
++---.github
+|   \---workflows
++---ChatApp.AuthService
+|   +---AuthService
+|   |   |   AuthService.sln
+|   |   |   Program.cs
+|   |   |   README.md
+|   |   +---Controllers
+|   |   +---Logging
+|   |   +---Middlewares
+|   +---AuthService.Core
+|   |   |   AuthService.Core.csproj
+|   |   +---Constants
+|   |   +---DTOs
+|   |   +---Interfaces
+|   |   +---Models
+|   |   +---Services
+|   |   \---Utils
+|   \---AuthService.Infrastructure
+|       |   AuthService.Infrastructure.csproj
+|       +---Configurations
+|       +---Producers
+|       \---Repositories
++---ChatApp.ChatService
+|   +---ChatApp.ChatService.API
+|   |   |   ChatApp.ChatService.API.sln
+|   |   |   Program.cs
+|   |   +---Controllers
+|   +---ChatApp.ChatService.Core
+|   |   |   ChatApp.ChatService.Core.csproj
+|   |   +---DTOs
+|   |   +---Entities
+|   |   +---Enums
+|   |   +---Exceptions
+|   |   +---Interfaces
+|   |   +---Mappings
+|   |   +---RequestResponseModels
+|   |   \---Services
+|   \---ChatApp.ChatService.Infrastructure
+|       |   ChatApp.ChatService.Infrastructure.csproj
+|       +---HttpClients
+|       +---Repositories
+|       \---Settings
+|               
++---ChatApp.Shared
+|   |   Shared.csproj
+|   |   Shared.sln
+|   +---Configurations
+|   +---Constants
+|   +---DTOs
+|   +---Enums
+|   +---EventContracts
+|   +---Middlewares
+|   +---Models
+\---ChatApp.UserService
+    +---ChatApp.UserService.API
+    |   |   ChatApp.UserService.API.sln
+    |   |   Program.cs
+    |   +---Controllers
+    |   +---Mappings
+    |   +---Middlewares
+    +---ChatApp.UserService.Core
+    |   |   ChatApp.UserService.Core.csproj
+    |   +---Entities
+    |   +---Enums
+    |   +---Extensions
+    |   +---Interfaces
+    |   +---Mappings
+    |   +---RequestDTOs
+    |   +---ResponseDTOs
+    |   \---Services
+    \---ChatApp.UserService.Infrastructure
+        |   ChatApp.UserService.Infrastructure.csproj
+        +---BackgroundServices
+        +---Consumers
+        +---Repositories
+        \---Settings

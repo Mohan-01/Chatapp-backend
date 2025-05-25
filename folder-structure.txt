@@ -1,0 +1,237 @@
+|   .gitignore
+|   folder-structure.txt
+|   README.md
+|   
++---.github
+|   \---workflows
++---ChatApp.AuthService
+|   +---AuthService
+|   |   |   .dockerignore
+|   |   |   AuthService.sln
+|   |   |   docker-compose.yml
+|   |   |   Dockerfile
+|   |   |   Program.cs
+|   |   |   README.md
+|   |   +---Controllers
+|   |   |       AuthController.cs
+|   |   +---Logging
+|   |   |       CallerInfoEnricher.cs
+|   |   +---Middlewares
+|   |   |       AuthenticationMiddlewear.cs
+|   |   |       ExceptionHandlingMiddleware.cs
+|   +---AuthService.Core
+|   |   |   AuthService.Core.csproj
+|   |   +---Constants
+|   |   |       RoleDescriptions.cs
+|   |   +---DTOs
+|   |   |       AuthResponseDto.cs
+|   |   |       AuthServiceResponseDto.cs
+|   |   |       ChangePasswordRequestDto.cs
+|   |   |       ChangeUsernameRequestDto.cs
+|   |   |       ChangeUsernameResponseDto.cs
+|   |   |       ForgotPasswordRequestDto.cs
+|   |   |       ForgotUsernameRequestDto.cs
+|   |   |       LoginRequestDto.cs
+|   |   |       RegisterRequestDto.cs
+|   |   |       ResetPasswordRequestDto.cs
+|   |   |       UpdateEmailRequestDto.cs
+|   |   |       UpdateEmailResponseDto.cs
+|   |   |       ValidateTokenRequest.cs
+|   |   |       ValidateTokenResponseDto.cs
+|   |   +---Interfaces
+|   |   |       IAuthRepository.cs
+|   |   |       IAuthService.cs
+|   |   |       IEmailNotificationService.cs
+|   |   |       IEmailService.cs
+|   |   |       IEventPublisher.cs
+|   |   |       ITokenHandler.cs
+|   |   +---Models
+|   |   |       AuthUser.cs
+|   |   +---Services
+|   |   |       AuthService.cs
+|   |   |       EmailNotificationService .cs
+|   |   |       EmailService.cs
+|   |   \---Utils
+|   |           AuthExecption.cs
+|   |           PasswordHasher.cs
+|   |           TokenHandler.cs
+|   \---AuthService.Infrastructure
+|       |   AuthService.Infrastructure.csproj
+|       +---Configurations
+|       |       MongoDbConfig.cs
+|       |       RabbitMqConfig.cs
+|       +---Producers
+|       |       EventPublisher.cs
+|       \---Repositories
+|               AuthRepository.cs
++---ChatApp.ChatService
+|   +---ChatApp.ChatService.API
+|   |   |   ChatApp.ChatService.API.sln
+|   |   |   Program.cs
+|   |   +---Controllers
+|   |   |       ChatController.cs
+|   +---ChatApp.ChatService.Core
+|   |   |   ChatApp.ChatService.Core.csproj
+|   |   +---DTOs
+|   |   |   |   FriendDto.cs
+|   |   |   +---Chat
+|   |   |   |       ChatDto.cs
+|   |   |   |       PrivateChatDto.cs
+|   |   |   \---Message
+|   |   |           AttachmentDto.cs
+|   |   |           MessageDto.cs
+|   |   +---Entities
+|   |   |   +---Chat
+|   |   |   |       Chat.cs
+|   |   |   +---Friendship
+|   |   |   |       Friendship.cs
+|   |   |   \---Message
+|   |   |           Attachment.cs
+|   |   |           Message.cs
+|   |   +---Enums
+|   |   |   +---Chat
+|   |   |   |       ChatStatus.cs
+|   |   |   |       ChatType.cs
+|   |   |   |       GroupType.cs
+|   |   |   +---Friend
+|   |   |   |       FriendRequestStatus.cs
+|   |   |   \---Message
+|   |   |           AttachmentType.cs
+|   |   |           MessageStatus.cs
+|   |   |           MessageType.cs
+|   |   +---Exceptions
+|   |   |       NotFoundException .cs
+|   |   +---Interfaces
+|   |   |       IChatApiClient.cs
+|   |   |       IChatRepository.cs
+|   |   |       IChatService.cs
+|   |   |       IFriendshipRepository.cs
+|   |   |       IFriendshipService.cs
+|   |   |       IMessageApiClient.cs
+|   |   |       IMessageRepository.cs
+|   |   |       IMessageService.cs
+|   |   |       IUserApiClient.cs
+|   |   +---Mappings
+|   |   |       MappingProfile.cs
+|   |   |       MappingToDtos.cs
+|   |   +---RequestResponseModels
+|   |   |   +---Chat
+|   |   |   |       CreateChatRequest.cs
+|   |   |   |       ServiceResponse.cs
+|   |   |   |       UpdateChatStatusRequest.cs
+|   |   |   +---Friend
+|   |   |   |       AcceptFriendRequestDto.cs
+|   |   |   |       BlockUserDto.cs
+|   |   |   |       FriendRequestDto.cs
+|   |   |   |       SendFriendRequestDto.cs
+|   |   |   |       UnfriendUserDto.cs
+|   |   |   \---Message
+|   |   |           ChangeMessageStatus.cs
+|   |   |           EditTextMessage.cs
+|   |   |           SendMessageDto.cs
+|   |   \---Services
+|   |           ChatService.cs
+|   |           FriendshipService.cs
+|   |           MessageService.cs
+|   \---ChatApp.ChatService.Infrastructure
+|       |   ChatApp.ChatService.Infrastructure.csproj
+|       +---HttpClients
+|       |       ChatApiClient.cs
+|       |       MessageApiClient.cs
+|       |       UserApiClient.cs
+|       +---Repositories
+|       |       ChatRepository.cs
+|       |       FriendshipRepository.cs
+|       |       MessageRepository.cs
+|       |       Pipelines.cs
+|       \---Settings
+|               MongoDbSettings.cs
+|               
++---ChatApp.Shared
+|   |   Shared.csproj
+|   |   Shared.sln
+|   +---Configurations
+|   |       IRabbitMQConnection.cs
+|   |       RabbitMQConnection.cs
+|   +---Constants
+|   |       QueueNames.cs
+|   +---DTOs
+|   |       AuthResponseDto.cs
+|   |       AuthServiceResponseDto.cs
+|   |       ValidateTokenRequest.cs
+|   |       ValidateTokenResponseDto.cs
+|   +---Enums
+|   |   \---User
+|   |           UserRole.cs
+|   +---EventContracts
+|   |       EmailChangedEvent.cs
+|   |       UserDeletedEvent.cs
+|   |       UsernameChangedEvent.cs
+|   |       UserRegisteredEvent.cs
+|   +---Middlewares
+|   |       AuthenticationMiddleware.cs
+|   +---Models
+|   |   \---User
+|   |           UserDto.cs
+\---ChatApp.UserService
+    +---ChatApp.UserService.API
+    |   |   ChatApp.UserService.API.sln
+    |   |   Program.cs
+    |   +---Controllers
+    |   |       UserController.cs
+    |   +---Mappings
+    |   |       MappingProfile.cs
+    |   |       MappingToDtos.cs
+    |   +---Middlewares
+    |   |       AuthenticationMiddleware.cs
+    |   |       ExceptionHandlingMiddleware.cs
+    +---ChatApp.UserService.Core
+    |   |   ChatApp.UserService.Core.csproj
+    |   +---Entities
+    |   |       User2.cs
+    |   +---Enums
+    |   |       UserStatus.cs
+    |   +---Extensions
+    |   |       StringExtensions.cs
+    |   +---Interfaces
+    |   |       IEmailChangedConsumer.cs
+    |   |       IUserDeletedConsumer.cs
+    |   |       IUserEventsService.cs
+    |   |       IUsernameChangedConsumer.cs
+    |   |       IUserRegisteredConsumer.cs
+    |   |       IUserRepository.cs
+    |   |       IUserService.cs
+    |   +---Mappings
+    |   |       MappingProfile.cs
+    |   |       MappingToDtos.cs
+    |   +---RequestDTOs
+    |   |       BatchUserRequest.cs
+    |   |       SearchUsersRequest.cs
+    |   |       UpdateUserRequest.cs
+    |   |       UserByEmailRequest.cs
+    |   |       ValidateTokenRequest.cs
+    |   +---ResponseDTOs
+    |   |       AuthResponseDto.cs
+    |   |       AuthServiceResponseDto.cs
+    |   |       ServiceResponse.cs
+    |   |       ValidateTokenResponseDto.cs
+    |   \---Services
+    |           UserEventsService.cs
+    |           UserService.cs
+    \---ChatApp.UserService.Infrastructure
+        |   ChatApp.UserService.Infrastructure.csproj
+        +---BackgroundServices
+        |       EmailChangedConsumerService.cs
+        |       UserDeletedConsumerService.cs
+        |       UsernameChangedConsumerService.cs
+        |       UserRegisteredConsumerService.cs
+        +---Consumers
+        |       EmailChangedConsumer.cs
+        |       EventConsumer.cs
+        |       UserDeletedConsumer.cs
+        |       UsernameChangedConsumer.cs
+        |       UserRegisteredConsumer.cs
+        +---Repositories
+        |       UserRepository.cs
+        \---Settings
+                MongoDbSettings.cs

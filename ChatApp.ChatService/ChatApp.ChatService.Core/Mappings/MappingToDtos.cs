@@ -12,15 +12,23 @@ namespace ChatApp.ChatService.Core.Mappings
 #pragma warning disable CS8601 // Possible null reference assignment.
             return new MessageDto
             {
+                ChatId = message.ChatId.ToString(),
                 MessageId = message.MessageId.ToString(),
                 From = message.SenderUsername,
                 To = message.ReceiverUsername,
                 Time = message.SentAt,
                 Text = message.Text,
-                MessageType = message.MessageType,
+                MessageType = message.MessageType.ToString(),
                 IsEdited = message.IsEdited,
                 MessageStatus = message.MessageStatus.ToString()
             };
+#pragma warning restore CS8601 // Possible null reference assignment.
+        }
+
+        public static MessageDto MapMessageToDto(MessageDto message)
+        {
+#pragma warning disable CS8601 // Possible null reference assignment.
+            return message;
 #pragma warning restore CS8601 // Possible null reference assignment.
         }
 
@@ -50,9 +58,8 @@ namespace ChatApp.ChatService.Core.Mappings
                 Username1 = chat.ParticipantsDetails[0].Username, // Access first participant
                 Username2 = chat.ParticipantsDetails[1].Username, // Access second participant
                 CreatedAt = chat.CreatedAt,
-                ChatStatus = chat.ChatStatus
+                ChatStatus = chat.ChatStatus.ToString()
             };
         }
-
     }
 }

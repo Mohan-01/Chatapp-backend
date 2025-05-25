@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using Shared.Models.User;
 using ChatApp.ChatService.Core.Entities.Message;
 using ChatApp.ChatService.Core.Enums.Chat;
+using ChatApp.ChatService.Core.DTOs.Message;
 
 namespace ChatService.Entities.Chat
 {
@@ -28,7 +29,7 @@ namespace ChatService.Entities.Chat
 
         // Populating values
         public List<UserDto> ParticipantsDetails { get; set; } = [];
-        public List<Message> Messages { get; set; } = [];
+        public List<MessageDto> Messages { get; set; } = [];
     }
 
 }

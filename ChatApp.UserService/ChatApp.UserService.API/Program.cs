@@ -10,6 +10,8 @@ using ChatApp.UserService.Infrastructure.Settings;
 using ChatApp.UserService.Infrastructure.Consumers;
 using ChatApp.UserService.Infrastructure.BackgroundServices;
 using Shared.Middlewares;
+using Shared.HttpClients.Interfaces;
+using Shared.HttpClients;
 
 namespace ChatApp.UserService.API
 {
@@ -19,7 +21,8 @@ namespace ChatApp.UserService.API
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Configure logging, database, and services
+            // Configure env, logging, database, and services
+            ConfigureEnvironment(builder);
             ConfigureSerilog(builder);
             ConfigureMongoDb(builder.Services, builder.Configuration);
             ConfigureRabbitMq(builder.Services, builder.Configuration);
@@ -39,6 +42,15 @@ namespace ChatApp.UserService.API
             app.Run();
         }
 
+        private static void ConfigureEnvironment(WebApplicationBuilder builder)
+        {
+            builder.Configuration
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
+        }
+
         private static void ConfigureSerilog(WebApplicationBuilder builder)
         {
             Log.Logger = new LoggerConfiguration()
@@ -50,6 +62,8 @@ namespace ChatApp.UserService.API
                 .WriteTo.MongoDB(builder.Configuration["MongoDbSettings:ConnectionString"] + builder.Configuration["MongoDbSettings:DatabaseName"],
                                  collectionName: "UserServiceLogs")
                 .CreateLogger();
+
+            Log.Information("Running in environment: {Environment}", builder.Environment.EnvironmentName);
 
             builder.Host.UseSerilog();
         }
@@ -119,6 +133,7 @@ namespace ChatApp.UserService.API
                           .AllowCredentials();
                 });
             });
+            services.AddHttpClient(); // <-- This line is key
         }
 
         private static void ConfigureMongoDb(IServiceCollection services, IConfiguration configuration)
@@ -159,17 +174,21 @@ namespace ChatApp.UserService.API
 
         private static void ConfigureEventConsumers(IServiceCollection services)
         {
-            services.AddSingleton<IUserRegisteredConsumer, UserRegisteredConsumer>();
+            services.AddSingleton<UserRegisteredConsumer>();
             services.AddHostedService<UserRegisteredConsumerService>();
 
-            services.AddSingleton<IUsernameChangedConsumer, UsernameChangedConsumer>();
+            services.AddSingleton<UserRegisteredDlqConsumer>();
+            services.AddHostedService<UserRegisteredDqlConsumerService>();
+
+            services.AddSingleton<UsernameChangedConsumer>();
             services.AddHostedService<UsernameChangedConsumerService>();
 
-            services.AddSingleton<IUserDeletedConsumer, UserDeletedConsumer>();
+            services.AddSingleton<UserDeletedConsumer>();
             services.AddHostedService<UserDeletedConsumerService>();
 
-            services.AddSingleton<IEmailChangedConsumer, EmailChangedConsumer>();
+            services.AddSingleton<EmailChangedConsumer>();
             services.AddHostedService<EmailChangedConsumerService>();
+
         }
 
         private static void ConfigureServices(IServiceCollection services)

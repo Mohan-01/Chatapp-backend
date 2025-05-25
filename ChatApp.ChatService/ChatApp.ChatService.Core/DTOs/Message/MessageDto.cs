@@ -4,12 +4,13 @@ namespace ChatApp.ChatService.Core.DTOs.Message
 {
     public class MessageDto
     {
+        required public string ChatId { get; set; }
         required public string MessageId { get; set; }
         required public string From { get; set; }
         required public string To { get; set; }
         required public DateTime Time { get; set; }
         public string? Text { get; set; }
-        required public MessageType MessageType { get; set; } 
+        required public string MessageType { get; set; } 
         public List<AttachmentDto> Attachments { get; set; } = [];
         public string? RepliedTo { get; set; }
         required public bool IsEdited { get; set; }
