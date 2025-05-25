@@ -4,6 +4,7 @@ namespace ChatApp.ChatService.Core.DTOs.Message
 {
     public class MessageDto
     {
+        required public string ChatId { get; set; }
         required public string MessageId { get; set; }
         required public string From { get; set; }
         required public string To { get; set; }

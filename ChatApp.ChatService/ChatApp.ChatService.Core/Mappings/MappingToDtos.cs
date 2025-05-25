@@ -12,6 +12,7 @@ namespace ChatApp.ChatService.Core.Mappings
 #pragma warning disable CS8601 // Possible null reference assignment.
             return new MessageDto
             {
+                ChatId = message.ChatId.ToString(),
                 MessageId = message.MessageId.ToString(),
                 From = message.SenderUsername,
                 To = message.ReceiverUsername,
