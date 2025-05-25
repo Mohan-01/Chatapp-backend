@@ -17,7 +17,7 @@ using Shared.Producers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System;
+using System.Text.Json;
 using Microsoft.AspNetCore.SignalR;
 using ChatApp.ChatService.Infrastructure.SignalR;
 using ChatApp.ChatService.Core.Services;
@@ -221,6 +221,7 @@ namespace ChatApp.ChatService.API
             var abort = configuration["Redis:AbortOnConnectFail"] ?? "false";
 
             var connectionString = $"{host}:{port},abortConnect={abort}";
+            Log.Information("Redis configured with connection string: {ConnectionString}", connectionString);
 
             services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(connectionString));
             services.AddScoped<IRedisCacheService, RedisCacheService>();
