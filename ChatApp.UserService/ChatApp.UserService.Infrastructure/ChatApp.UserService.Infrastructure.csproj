@@ -26,6 +26,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+  	<PackageReference Include="AutoMapper" Version="16.1.1" />
 	  <ProjectReference Include="..\ChatApp.UserService.Core\ChatApp.UserService.Core.csproj" />
 	</ItemGroup>
 
